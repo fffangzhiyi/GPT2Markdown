@@ -1,0 +1,75 @@
+body {
+  width: 260px;
+  padding: 16px;
+  box-sizing: border-box;
+  margin: 0;
+  font-family: system-ui, -apple-system, sans-serif;
+  background: #fafaf9;
+  color: #1a1a1a;
+}
+
+.container {
+  width: 100%;
+}
+
+.title {
+  margin: 0 0 12px;
+  font-size: 15px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.export-btn {
+  width: 100%;
+  height: 36px;
+  border: none;
+  border-radius: 6px;
+  background: #10a37f;
+  color: white;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.export-btn:hover {
+  background: #0d8c6d;
+}
+
+.export-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.export-btn.loading {
+  background: #888;
+}
+
+.status {
+  margin: 8px 0 0;
+  font-size: 12px;
+  min-height: 18px;
+}
+
+.status.success {
+  color: #10a37f;
+}
+
+.status.error {
+  color: #d14343;
+}
+
+.footer {
+  margin: 12px 0 0;
+  font-size: 11px;
+  color: #888;
+  display: flex;
+  justify-content: space-between;
+}
+
+#settings-link {
+  color: #888;
+  text-decoration: none;
+}
+
+#settings-link:hover {
+  color: #333;
+}

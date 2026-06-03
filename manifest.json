@@ -1,0 +1,57 @@
+{
+  "manifest_version": 3,
+  "name": "GPT2Markdown",
+  "version": "0.1.0",
+  "description": "Export ChatGPT conversations to Markdown",
+  "permissions": [
+    "activeTab",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://chatgpt.com/*"
+  ],
+  "commands": {
+    "export-conversation": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+E",
+        "mac": "MacCtrl+Shift+E"
+      },
+      "description": "Export current ChatGPT conversation"
+    }
+  },
+  "action": {
+    "default_popup": "popup/popup.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://chatgpt.com/*"
+      ],
+      "js": [
+        "lib/api.js",
+        "lib/parser.js",
+        "lib/markdown.js",
+        "lib/download.js",
+        "lib/bridge.js"
+      ],
+      "world": "MAIN"
+    },
+    {
+      "matches": [
+        "https://chatgpt.com/*"
+      ],
+      "js": [
+        "content.js"
+      ]
+    }
+  ],
+  "options_page": "settings/index.html",
+  "icons": {
+    "16": "assets/icons/icon16.png",
+    "48": "assets/icons/icon48.png",
+    "128": "assets/icons/icon128.png"
+  }
+}
