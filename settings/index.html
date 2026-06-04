@@ -1,9 +1,47 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
   <meta charset="utf-8">
-  <title>GPT2Markdown Settings</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GPT2Markdown 设置</title>
+  <link rel="stylesheet" href="settings.css">
 </head>
 <body>
+  <main class="settings-page">
+    <header class="page-header">
+      <h1>GPT2Markdown 设置</h1>
+      <p>配置导出位置并查看最近的导出记录</p>
+    </header>
+
+    <section class="settings-card" aria-labelledby="download-heading">
+      <h2 id="download-heading">下载配置</h2>
+      <label for="folder-name">文件夹名称</label>
+      <div class="folder-controls">
+        <input id="folder-name" type="text" autocomplete="off" aria-describedby="folder-preview save-status">
+        <button id="save-button" type="button">保存</button>
+      </div>
+      <p id="folder-preview" class="folder-preview">正在加载...</p>
+      <p id="save-status" class="save-status" aria-live="polite"></p>
+    </section>
+
+    <section class="settings-card" aria-labelledby="shortcut-heading">
+      <h2 id="shortcut-heading">快捷键</h2>
+      <p class="shortcut-line">
+        <span>快捷键</span>
+        <kbd>Ctrl</kbd><span>+</span><kbd>Shift</kbd><span>+</span><kbd>E</kbd>
+      </p>
+      <p class="secondary-text">可在 Chrome 扩展快捷键管理中修改</p>
+    </section>
+
+    <section class="settings-card" aria-labelledby="history-heading">
+      <h2 id="history-heading">导出历史</h2>
+      <div id="history-list" class="history-list" aria-live="polite">
+        <p id="history-loading" class="empty-history">正在加载...</p>
+      </div>
+    </section>
+
+    <footer class="version">版本 0.1.0</footer>
+  </main>
+  <script src="settings.js"></script>
 </body>
 </html>

@@ -1,0 +1,149 @@
+'use strict';
+
+const assert = require('node:assert');
+const fs = require('node:fs');
+const vm = require('node:vm');
+
+function createElement(id) {
+  return {
+    id,
+    textContent: '',
+    disabled: false,
+    className: '',
+    classList: {
+      values: new Set(),
+      add(value) {
+        this.values.add(value);
+      },
+      remove(value) {
+        this.values.delete(value);
+      }
+    },
+    listeners: {},
+    addEventListener(type, listener) {
+      this.listeners[type] = listener;
+    },
+    click() {
+      if (this.listeners.click) {
+        this.listeners.click({
+          preventDefault() {}
+        });
+      }
+    }
+  };
+}
+
+function createContext(exportResponse) {
+  const elements = {
+    'export-btn': createElement('export-btn'),
+    status: createElement('status'),
+    'last-export': createElement('last-export'),
+    'settings-link': createElement('settings-link')
+  };
+  elements['export-btn'].textContent = '导出当前对话';
+
+  const context = {
+    console,
+    Date,
+    document: {
+      getElementById(id) {
+        return elements[id];
+      }
+    },
+    chrome: {
+      runtime: {
+        sendMessage(message, callback) {
+          if (message.action === 'getExportStatus') {
+            callback({
+              lastExportTime: null,
+              lastExportFilename: ''
+            });
+            return;
+          }
+          callback(exportResponse);
+        },
+        openOptionsPage() {}
+      }
+    },
+    elements
+  };
+
+  context.globalThis = context;
+  return vm.createContext(context);
+}
+
+function loadPopup(context) {
+  const source = fs.readFileSync('popup/popup.js', 'utf8');
+  vm.runInContext(source, context);
+}
+
+function createErrorResponse(error) {
+  return {
+    action: 'exportResult',
+    status: 'error',
+    detail: {
+      error
+    }
+  };
+}
+
+function runExportScenario(response) {
+  const context = createContext(response);
+  loadPopup(context);
+  context.elements['export-btn'].click();
+  return context;
+}
+
+async function test(name, fn) {
+  try {
+    await fn();
+    console.log('PASS', name);
+  } catch (error) {
+    console.error('FAIL', name);
+    throw error;
+  }
+}
+
+(async () => {
+  await test('API timeout shows Chinese popup message', () => {
+    const context = runExportScenario(createErrorResponse('TIMEOUT'));
+
+    assert.strictEqual(context.elements.status.textContent, '请求超时，请重试');
+  });
+
+  await test('cancelled DOM fallback shows cancelled popup message', () => {
+    const context = runExportScenario(createErrorResponse('CANCELLED'));
+
+    assert.strictEqual(context.elements.status.textContent, '已取消导出');
+  });
+
+  await test('successful DOM fallback shows exported filename', () => {
+    const context = runExportScenario({
+      action: 'exportResult',
+      status: 'success',
+      detail: {
+        filename: 'dom-export.md'
+      }
+    });
+
+    assert.strictEqual(context.elements.status.textContent, '✅ 已导出: dom-export.md');
+  });
+
+  await test('failed DOM fallback shows parse error popup message', () => {
+    const context = runExportScenario(createErrorResponse('DOM_PARSE_FAILED'));
+
+    assert.strictEqual(context.elements.status.textContent, '页面内容解析失败，请刷新后重试');
+  });
+
+  await test('download failure shows download error popup message', () => {
+    const context = runExportScenario(createErrorResponse('DOWNLOAD_FAILED'));
+
+    assert.strictEqual(context.elements.status.textContent, '文件下载失败，请检查下载权限');
+  });
+
+  await test('empty content shows no content popup message', () => {
+    const context = runExportScenario(createErrorResponse('NO_CONTENT'));
+
+    assert.strictEqual(context.elements.status.textContent, '对话内容为空，无法导出');
+  });
+})();

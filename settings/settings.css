@@ -1,1 +1,188 @@
+* {
+  box-sizing: border-box;
+}
 
+body {
+  min-height: 100vh;
+  margin: 0;
+  padding: 40px 16px;
+  display: flex;
+  justify-content: center;
+  background: #fafaf9;
+  color: #1a1a1a;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.settings-page {
+  width: 100%;
+  max-width: 480px;
+}
+
+.page-header {
+  margin-bottom: 24px;
+}
+
+.page-header h1 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 650;
+}
+
+.page-header p {
+  margin: 6px 0 0;
+  color: #666;
+  font-size: 14px;
+}
+
+.settings-card {
+  margin: 0 0 16px;
+  padding: 20px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+.settings-card h2 {
+  margin: 0 0 16px;
+  font-size: 16px;
+  font-weight: 650;
+}
+
+.settings-card label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.folder-controls {
+  display: flex;
+  gap: 8px;
+}
+
+#folder-name {
+  width: 100%;
+  min-width: 0;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  color: #1a1a1a;
+  font: inherit;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+#folder-name:focus {
+  border-color: #10a37f;
+  box-shadow: 0 0 0 2px rgba(16, 163, 127, 0.12);
+}
+
+#save-button {
+  flex: 0 0 auto;
+  padding: 8px 18px;
+  border: none;
+  border-radius: 6px;
+  background: #10a37f;
+  color: #fff;
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+#save-button:hover {
+  background: #0d8c6d;
+}
+
+#save-button:focus-visible {
+  outline: 2px solid #10a37f;
+  outline-offset: 2px;
+}
+
+.folder-preview,
+.save-status,
+.secondary-text {
+  margin: 8px 0 0;
+  color: #888;
+  font-size: 12px;
+}
+
+.save-status {
+  min-height: 18px;
+}
+
+.save-status.success {
+  color: #10a37f;
+}
+
+.save-status.error {
+  color: #d14343;
+}
+
+.shortcut-line {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #666;
+  font-size: 14px;
+}
+
+.shortcut-line > span:first-child {
+  margin-right: 5px;
+}
+
+kbd {
+  min-width: 28px;
+  padding: 3px 6px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: #fafaf9;
+  color: #1a1a1a;
+  font-family: inherit;
+  font-size: 12px;
+  text-align: center;
+  box-shadow: 0 1px 0 #ddd;
+}
+
+.history-list {
+  min-height: 36px;
+}
+
+.history-item {
+  margin: 0;
+  padding: 8px 0;
+  border-bottom: 1px solid #eee;
+  color: #333;
+  font-size: 13px;
+  line-height: 1.5;
+  cursor: text;
+  user-select: all;
+}
+
+.history-item:last-child {
+  border-bottom: none;
+}
+
+.empty-history {
+  margin: 0;
+  padding: 8px 0;
+  color: #888;
+  font-size: 13px;
+}
+
+.version {
+  color: #888;
+  font-size: 11px;
+  text-align: center;
+}
+
+@media (max-width: 520px) {
+  body {
+    padding: 16px;
+  }
+
+  .folder-controls {
+    align-items: stretch;
+  }
+}

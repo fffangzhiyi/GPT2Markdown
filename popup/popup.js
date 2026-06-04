@@ -43,7 +43,12 @@ function getErrorMessage(error) {
     NETWORK_ERROR: '网络请求失败，请检查登录状态',
     UNAUTHORIZED: '请先登录 ChatGPT',
     TIMEOUT: '请求超时，请重试',
-    RATE_LIMITED: '请求过于频繁，请稍后重试'
+    RATE_LIMITED: '请求过于频繁，请稍后重试',
+    PARSE_ERROR: 'API 返回数据异常，请刷新后重试',
+    CANCELLED: '已取消导出',
+    NO_CONTENT: '对话内容为空，无法导出',
+    DOWNLOAD_FAILED: '文件下载失败，请检查下载权限',
+    DOM_PARSE_FAILED: '页面内容解析失败，请刷新后重试'
   };
   return messages[error] || '导出失败，请重试';
 }

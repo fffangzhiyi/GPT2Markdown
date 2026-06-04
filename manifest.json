@@ -35,6 +35,7 @@
         "lib/parser.js",
         "lib/markdown.js",
         "lib/download.js",
+        "lib/dom-parse.js",
         "lib/bridge.js"
       ],
       "world": "MAIN"
