@@ -48,6 +48,74 @@ body {
   font-weight: 650;
 }
 
+.save-mode-group {
+  margin: 0 0 16px;
+  padding: 0;
+  border: none;
+}
+
+.save-mode-legend {
+  margin-bottom: 8px;
+  padding: 0;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.radio-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color 120ms ease, background 120ms ease;
+}
+
+.radio-label:first-of-type {
+  margin-bottom: 8px;
+}
+
+.radio-label:has(input:checked) {
+  border-color: #10a37f;
+  background: rgba(16, 163, 127, 0.04);
+}
+
+.radio-label:hover {
+  border-color: #ccc;
+}
+
+.radio-label input[type="radio"] {
+  margin-top: 2px;
+  accent-color: #10a37f;
+  flex-shrink: 0;
+}
+
+.radio-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.radio-title {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.radio-desc {
+  font-size: 12px;
+  color: #888;
+}
+
+.folder-section {
+  border-top: 1px solid #eee;
+  padding-top: 16px;
+}
+
+.folder-section.hidden {
+  display: none;
+}
+
 .settings-card label {
   display: block;
   margin-bottom: 8px;

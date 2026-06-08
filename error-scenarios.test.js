@@ -36,6 +36,7 @@ function createElement(id) {
 function createContext(exportResponse) {
   const elements = {
     'export-btn': createElement('export-btn'),
+    'voice-warning': createElement('voice-warning'),
     status: createElement('status'),
     'last-export': createElement('last-export'),
     'settings-link': createElement('settings-link')
@@ -109,30 +110,6 @@ async function test(name, fn) {
     const context = runExportScenario(createErrorResponse('TIMEOUT'));
 
     assert.strictEqual(context.elements.status.textContent, '请求超时，请重试');
-  });
-
-  await test('cancelled DOM fallback shows cancelled popup message', () => {
-    const context = runExportScenario(createErrorResponse('CANCELLED'));
-
-    assert.strictEqual(context.elements.status.textContent, '已取消导出');
-  });
-
-  await test('successful DOM fallback shows exported filename', () => {
-    const context = runExportScenario({
-      action: 'exportResult',
-      status: 'success',
-      detail: {
-        filename: 'dom-export.md'
-      }
-    });
-
-    assert.strictEqual(context.elements.status.textContent, '✅ 已导出: dom-export.md');
-  });
-
-  await test('failed DOM fallback shows parse error popup message', () => {
-    const context = runExportScenario(createErrorResponse('DOM_PARSE_FAILED'));
-
-    assert.strictEqual(context.elements.status.textContent, '页面内容解析失败，请刷新后重试');
   });
 
   await test('download failure shows download error popup message', () => {

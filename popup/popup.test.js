@@ -40,6 +40,7 @@ function createElement(id) {
 function createContext(responses = {}) {
   const elements = {
     'export-btn': createElement('export-btn'),
+    'voice-warning': createElement('voice-warning'),
     status: createElement('status'),
     'last-export': createElement('last-export'),
     'settings-link': createElement('settings-link')
@@ -155,9 +156,37 @@ async function test(name, fn) {
     assert.strictEqual(context.elements['export-btn'].textContent, '导出当前对话');
     assert.strictEqual(context.elements.status.textContent, '✅ 已导出: 2026-06-02-Title.md');
     assert.strictEqual(context.elements.status.className, 'status success');
+    assert.strictEqual(context.elements['voice-warning'].textContent, '');
+    assert.strictEqual(context.elements['voice-warning'].className, 'voice-warning');
     assertJsonEqual(context.sentMessages[2], {
       action: 'getExportStatus'
     });
+  });
+
+  await test('shows voice export warning when unsupported content was replaced', () => {
+    const context = createContext({
+      getExportStatus: {
+        lastExportTime: null,
+        lastExportFilename: ''
+      },
+      exportCurrentConversation: {
+        action: 'exportResult',
+        status: 'success',
+        detail: {
+          filename: '2026-06-02-Voice.md',
+          hasUnsupportedContent: true
+        }
+      }
+    });
+
+    loadPopup(context);
+    context.elements['export-btn'].click();
+
+    assert.strictEqual(
+      context.elements['voice-warning'].textContent,
+      '目前不支持语音消息导出，语音消息将被占位符替换。'
+    );
+    assert.strictEqual(context.elements['voice-warning'].className, 'voice-warning visible');
   });
 
   await test('sets loading state before async export response resolves', () => {

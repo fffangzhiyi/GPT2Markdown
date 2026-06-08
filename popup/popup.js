@@ -1,6 +1,7 @@
 'use strict';
 
 const exportButton = document.getElementById('export-btn');
+const voiceWarningElement = document.getElementById('voice-warning');
 const statusElement = document.getElementById('status');
 const lastExportElement = document.getElementById('last-export');
 const settingsLink = document.getElementById('settings-link');
@@ -36,6 +37,17 @@ function setStatus(message, type) {
   statusElement.className = type ? 'status ' + type : 'status';
 }
 
+function setVoiceWarning(isVisible) {
+  if (!isVisible) {
+    voiceWarningElement.textContent = '';
+    voiceWarningElement.className = 'voice-warning';
+    return;
+  }
+
+  voiceWarningElement.textContent = '目前不支持语音消息导出，语音消息将被占位符替换。';
+  voiceWarningElement.className = 'voice-warning visible';
+}
+
 function getErrorMessage(error) {
   const messages = {
     NOT_ON_CHATGPT_PAGE: '请在 ChatGPT 对话页面使用',
@@ -45,10 +57,8 @@ function getErrorMessage(error) {
     TIMEOUT: '请求超时，请重试',
     RATE_LIMITED: '请求过于频繁，请稍后重试',
     PARSE_ERROR: 'API 返回数据异常，请刷新后重试',
-    CANCELLED: '已取消导出',
     NO_CONTENT: '对话内容为空，无法导出',
-    DOWNLOAD_FAILED: '文件下载失败，请检查下载权限',
-    DOM_PARSE_FAILED: '页面内容解析失败，请刷新后重试'
+    DOWNLOAD_FAILED: '文件下载失败，请检查下载权限'
   };
   return messages[error] || '导出失败，请重试';
 }
@@ -68,16 +78,19 @@ function refreshExportStatus() {
 function exportCurrentConversation() {
   setLoading(true);
   setStatus('', '');
+  setVoiceWarning(false);
   chrome.runtime.sendMessage({
     action: 'exportCurrentConversation'
   }, (response) => {
     setLoading(false);
     if (response && response.status === 'success') {
+      setVoiceWarning(Boolean(response.detail && response.detail.hasUnsupportedContent));
       setStatus('✅ 已导出: ' + response.detail.filename, 'success');
       refreshExportStatus();
       return;
     }
 
+    setVoiceWarning(false);
     const error = response && response.detail ? response.detail.error : '';
     setStatus(getErrorMessage(error), 'error');
   });

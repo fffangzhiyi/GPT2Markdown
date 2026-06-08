@@ -4,6 +4,10 @@ const CHATGPT_URL_PART = 'chatgpt.com';
 const EXPORT_COMMAND = 'export-conversation';
 const EXPORT_ACTION = 'exportCurrentConversation';
 const STATUS_ACTION = 'getExportStatus';
+const DEFAULT_FOLDER_NAME = 'chatgpt-inbox';
+const DEFAULT_SAVE_MODE = 'auto';
+
+let pendingAskFilename = null;
 
 function isChatGPTTab(tab) {
   return Boolean(tab && tab.url && tab.url.includes(CHATGPT_URL_PART));
@@ -42,6 +46,100 @@ async function saveExportRecord({ filename, title }) {
   });
 }
 
+async function getFolderName() {
+  const result = await chrome.storage.sync.get('settings');
+  const settings = result.settings || {};
+  return settings.folderName || DEFAULT_FOLDER_NAME;
+}
+
+async function getSaveMode() {
+  const result = await chrome.storage.sync.get('settings');
+  const settings = result.settings || {};
+  return settings.saveMode || DEFAULT_SAVE_MODE;
+}
+
+function createMarkdownDataUrl(markdown) {
+  return 'data:text/markdown;charset=utf-8,' + encodeURIComponent(markdown);
+}
+
+chrome.downloads.onDeterminingFilename.addListener((downloadItem, suggest) => {
+  if (pendingAskFilename && downloadItem.url.startsWith('data:text/markdown')) {
+    const filename = pendingAskFilename;
+    pendingAskFilename = null;
+    suggest({ filename, conflictAction: 'uniquify' });
+    return;
+  }
+  suggest();
+});
+
+async function processExportResponse(response, folderName) {
+  if (
+    !response
+    || response.status !== 'success'
+    || !response.detail
+    || !Object.prototype.hasOwnProperty.call(response.detail, 'markdown')
+  ) {
+    return response;
+  }
+
+  if (response.detail.markdown === '') {
+    return {
+      action: 'exportResult',
+      status: 'error',
+      detail: {
+        error: 'NO_CONTENT'
+      }
+    };
+  }
+
+  const saveMode = await getSaveMode();
+
+  try {
+    if (saveMode === 'auto') {
+      await chrome.downloads.download({
+        url: createMarkdownDataUrl(response.detail.markdown),
+        filename: folderName + '/' + response.detail.filename,
+        saveAs: false
+      });
+    } else {
+      pendingAskFilename = response.detail.filename;
+      await chrome.downloads.download({
+        url: createMarkdownDataUrl(response.detail.markdown),
+        saveAs: true
+      });
+    }
+  } catch (error) {
+    pendingAskFilename = null;
+    return {
+      action: 'exportResult',
+      status: 'error',
+      detail: {
+        error: 'DOWNLOAD_FAILED'
+      }
+    };
+  }
+
+  await saveExportRecord({
+    filename: response.detail.filename,
+    title: response.detail.title || ''
+  });
+
+  const detail = {
+    filename: response.detail.filename,
+    title: response.detail.title || ''
+  };
+
+  if (response.detail.hasUnsupportedContent) {
+    detail.hasUnsupportedContent = true;
+  }
+
+  return {
+    action: 'exportResult',
+    status: 'success',
+    detail
+  };
+}
+
 async function exportFromActiveTab() {
   const tab = await getActiveTab();
   if (!isChatGPTTab(tab)) {
@@ -54,17 +152,14 @@ async function exportFromActiveTab() {
     };
   }
 
+  const folderName = await getFolderName();
+
   try {
     const response = await chrome.tabs.sendMessage(tab.id, {
-      action: EXPORT_ACTION
+      action: EXPORT_ACTION,
+      folderName
     });
-    if (response && response.status === 'success') {
-      await saveExportRecord({
-        filename: response.detail.filename,
-        title: response.detail.title || ''
-      });
-    }
-    return response;
+    return await processExportResponse(response, folderName);
   } catch (error) {
     return {
       action: 'exportResult',
@@ -87,16 +182,14 @@ chrome.commands.onCommand.addListener(async (command) => {
     return;
   }
 
+  const folderName = await getFolderName();
+
   try {
     const response = await chrome.tabs.sendMessage(tab.id, {
-      action: EXPORT_ACTION
+      action: EXPORT_ACTION,
+      folderName
     });
-    if (response && response.status === 'success') {
-      await saveExportRecord({
-        filename: response.detail.filename,
-        title: response.detail.title || ''
-      });
-    }
+    await processExportResponse(response, folderName);
   } catch (error) {
   }
 });

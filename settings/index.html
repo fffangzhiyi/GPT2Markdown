@@ -15,13 +15,36 @@
 
     <section class="settings-card" aria-labelledby="download-heading">
       <h2 id="download-heading">下载配置</h2>
-      <label for="folder-name">文件夹名称</label>
-      <div class="folder-controls">
-        <input id="folder-name" type="text" autocomplete="off" aria-describedby="folder-preview save-status">
-        <button id="save-button" type="button">保存</button>
+
+      <fieldset class="save-mode-group">
+        <legend class="save-mode-legend">保存方式</legend>
+
+        <label class="radio-label">
+          <input type="radio" name="saveMode" value="ask" id="save-mode-ask">
+          <span class="radio-text">
+            <span class="radio-title">每次询问保存位置</span>
+            <span class="radio-desc">导出时弹出系统对话框，可保存到任意位置</span>
+          </span>
+        </label>
+
+        <label class="radio-label">
+          <input type="radio" name="saveMode" value="auto" id="save-mode-auto">
+          <span class="radio-text">
+            <span class="radio-title">自动保存到下载文件夹</span>
+            <span class="radio-desc">直接保存，不弹出对话框</span>
+          </span>
+        </label>
+      </fieldset>
+
+      <div id="folder-section" class="folder-section">
+        <label for="folder-name">子文件夹名称</label>
+        <div class="folder-controls">
+          <input id="folder-name" type="text" autocomplete="off" aria-describedby="folder-preview save-status">
+          <button id="save-button" type="button">保存</button>
+        </div>
+        <p id="folder-preview" class="folder-preview">正在加载...</p>
+        <p id="save-status" class="save-status" aria-live="polite"></p>
       </div>
-      <p id="folder-preview" class="folder-preview">正在加载...</p>
-      <p id="save-status" class="save-status" aria-live="polite"></p>
     </section>
 
     <section class="settings-card" aria-labelledby="shortcut-heading">
