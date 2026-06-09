@@ -4,8 +4,8 @@ const DEFAULT_FOLDER_NAME = 'chatgpt-inbox';
 const DEFAULT_SAVE_MODE = 'ask';
 
 const folderSection = document.getElementById('folder-section');
-const saveModeAskRadio = document.getElementById('save-mode-ask');
-const saveModeAutoRadio = document.getElementById('save-mode-auto');
+const modeCardAsk = document.getElementById('mode-card-ask');
+const modeCardAuto = document.getElementById('mode-card-auto');
 
 function padNumber(value) {
   return String(value).padStart(2, '0');
@@ -23,6 +23,11 @@ function formatDateTime(timestamp) {
   ].join(':');
 }
 
+function setSelectedCard(mode) {
+  modeCardAsk.setAttribute('aria-checked', mode === 'ask' ? 'true' : 'false');
+  modeCardAuto.setAttribute('aria-checked', mode === 'auto' ? 'true' : 'false');
+}
+
 function setFolderSectionVisible(visible) {
   if (visible) {
     folderSection.classList.remove('hidden');
@@ -35,9 +40,7 @@ async function saveSaveMode(mode) {
   const result = await chrome.storage.sync.get('settings');
   const settings = result.settings || {};
   settings.saveMode = mode;
-  await chrome.storage.sync.set({
-    settings
-  });
+  await chrome.storage.sync.set({ settings });
 }
 
 function updateFolderPreview(folderName, saveMode) {
@@ -96,23 +99,13 @@ async function loadSettings() {
     const saveMode = settings.saveMode || DEFAULT_SAVE_MODE;
 
     folderInput.value = folderName;
-
-    if (saveMode === 'ask') {
-      saveModeAskRadio.checked = true;
-      saveModeAutoRadio.checked = false;
-      setFolderSectionVisible(false);
-    } else {
-      saveModeAutoRadio.checked = true;
-      saveModeAskRadio.checked = false;
-      setFolderSectionVisible(true);
-    }
-
+    setSelectedCard(saveMode);
+    setFolderSectionVisible(saveMode === 'auto');
     updateFolderPreview(folderName, saveMode);
     renderExportHistory(historyResult.exportHistory);
   } catch (error) {
     folderInput.value = DEFAULT_FOLDER_NAME;
-    saveModeAskRadio.checked = true;
-    saveModeAutoRadio.checked = false;
+    setSelectedCard(DEFAULT_SAVE_MODE);
     setFolderSectionVisible(false);
     updateFolderPreview(DEFAULT_FOLDER_NAME, DEFAULT_SAVE_MODE);
     renderExportHistory([]);
@@ -124,7 +117,7 @@ async function saveFolderName() {
   const folderName = folderInput.value.trim();
 
   if (!folderName) {
-    showSaveStatus('⚠️ 文件夹名称不能为空', 'error');
+    showSaveStatus('文件夹名称不能为空', 'error');
     return;
   }
 
@@ -132,37 +125,34 @@ async function saveFolderName() {
     const result = await chrome.storage.sync.get('settings');
     const settings = result.settings || {};
     settings.folderName = folderName;
-    await chrome.storage.sync.set({
-      settings
-    });
+    await chrome.storage.sync.set({ settings });
     folderInput.value = folderName;
     updateFolderPreview(folderName, settings.saveMode || DEFAULT_SAVE_MODE);
-    showSaveStatus('✅ 已保存', 'success');
+    showSaveStatus('已保存', 'success');
   } catch (error) {
-    showSaveStatus('⚠️ 保存失败，请重试', 'error');
+    showSaveStatus('保存失败，请重试', 'error');
   }
+}
+
+async function handleModeChange(mode) {
+  setSelectedCard(mode);
+  await saveSaveMode(mode);
+  const folderInput = document.getElementById('folder-name');
+  const folderName = folderInput.value.trim() || DEFAULT_FOLDER_NAME;
+
+  if (mode === 'ask') {
+    setFolderSectionVisible(false);
+  } else {
+    setFolderSectionVisible(true);
+  }
+  updateFolderPreview(folderName, mode);
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('save-button').addEventListener('click', saveFolderName);
 
-  saveModeAskRadio.addEventListener('change', async () => {
-    if (saveModeAskRadio.checked) {
-      await saveSaveMode('ask');
-      setFolderSectionVisible(false);
-      const folderInput = document.getElementById('folder-name');
-      updateFolderPreview(folderInput.value.trim() || DEFAULT_FOLDER_NAME, 'ask');
-    }
-  });
-
-  saveModeAutoRadio.addEventListener('change', async () => {
-    if (saveModeAutoRadio.checked) {
-      await saveSaveMode('auto');
-      setFolderSectionVisible(true);
-      const folderInput = document.getElementById('folder-name');
-      updateFolderPreview(folderInput.value.trim() || DEFAULT_FOLDER_NAME, 'auto');
-    }
-  });
+  modeCardAsk.addEventListener('click', () => handleModeChange('ask'));
+  modeCardAuto.addEventListener('click', () => handleModeChange('auto'));
 
   await loadSettings();
 });

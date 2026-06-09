@@ -8,8 +8,8 @@ body {
   padding: 40px 16px;
   display: flex;
   justify-content: center;
-  background: #fafaf9;
-  color: #1a1a1a;
+  background: #fff;
+  color: #000;
   font-family: system-ui, -apple-system, sans-serif;
 }
 
@@ -24,32 +24,35 @@ body {
 
 .page-header h1 {
   margin: 0;
-  font-size: 24px;
-  font-weight: 650;
+  font-size: 20px;
+  font-weight: 600;
 }
 
 .page-header p {
-  margin: 6px 0 0;
-  color: #666;
-  font-size: 14px;
+  margin: 4px 0 0;
+  font-size: 13px;
+  font-weight: 400;
+  opacity: 0.55;
 }
 
 .settings-card {
-  margin: 0 0 16px;
+  margin: 0 0 12px;
   padding: 20px;
   background: #fff;
+  border: 1px solid #e6e6e6;
   border-radius: 8px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
 }
 
 .settings-card h2 {
-  margin: 0 0 16px;
-  font-size: 16px;
-  font-weight: 650;
+  margin: 0 0 14px;
+  font-size: 14px;
+  font-weight: 600;
 }
 
+/* Save mode cards */
+
 .save-mode-group {
-  margin: 0 0 16px;
+  margin: 0 0 14px;
   padding: 0;
   border: none;
 }
@@ -57,59 +60,59 @@ body {
 .save-mode-legend {
   margin-bottom: 8px;
   padding: 0;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
 }
 
-.radio-label {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
+.mode-card {
   padding: 10px 12px;
-  border: 1px solid #e0e0e0;
+  border: 1px solid #e6e6e6;
   border-radius: 8px;
   cursor: pointer;
-  transition: border-color 120ms ease, background 120ms ease;
-}
-
-.radio-label:first-of-type {
-  margin-bottom: 8px;
-}
-
-.radio-label:has(input:checked) {
-  border-color: #10a37f;
-  background: rgba(16, 163, 127, 0.04);
-}
-
-.radio-label:hover {
-  border-color: #ccc;
-}
-
-.radio-label input[type="radio"] {
-  margin-top: 2px;
-  accent-color: #10a37f;
-  flex-shrink: 0;
-}
-
-.radio-text {
+  transition: background 120ms ease, border-color 120ms ease;
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
 
-.radio-title {
-  font-size: 14px;
+.mode-card:first-of-type {
+  margin-bottom: 6px;
+}
+
+.mode-card:hover {
+  border-color: #ccc;
+}
+
+.mode-card[aria-checked="true"] {
+  background: #000;
+  border-color: #000;
+}
+
+.mode-card[aria-checked="true"] .mode-title,
+.mode-card[aria-checked="true"] .mode-desc {
+  color: #fff;
+}
+
+.mode-title {
+  font-size: 13px;
   font-weight: 500;
 }
 
-.radio-desc {
+.mode-desc {
   font-size: 12px;
-  color: #888;
+  font-weight: 400;
+  opacity: 0.55;
 }
 
+.mode-card[aria-checked="true"] .mode-desc {
+  opacity: 0.7;
+}
+
+/* Folder section */
+
 .folder-section {
-  border-top: 1px solid #eee;
-  padding-top: 16px;
+  border-top: 1px solid #e6e6e6;
+  padding-top: 14px;
 }
 
 .folder-section.hidden {
@@ -118,8 +121,8 @@ body {
 
 .settings-card label {
   display: block;
-  margin-bottom: 8px;
-  font-size: 14px;
+  margin-bottom: 6px;
+  font-size: 13px;
   font-weight: 500;
 }
 
@@ -132,51 +135,56 @@ body {
   width: 100%;
   min-width: 0;
   padding: 8px 12px;
-  border: 1px solid #ddd;
+  border: 1px solid #e6e6e6;
   border-radius: 6px;
-  color: #1a1a1a;
+  color: #000;
   font: inherit;
-  font-size: 14px;
+  font-size: 13px;
+  font-weight: 400;
   outline: none;
-  transition: border-color 120ms ease, box-shadow 120ms ease;
+  transition: border-color 120ms ease;
+  background: #fff;
 }
 
 #folder-name:focus {
-  border-color: #10a37f;
-  box-shadow: 0 0 0 2px rgba(16, 163, 127, 0.12);
+  border-color: #000;
 }
 
 #save-button {
   flex: 0 0 auto;
   padding: 8px 18px;
   border: none;
-  border-radius: 6px;
-  background: #10a37f;
+  border-radius: 50px;
+  background: #000;
   color: #fff;
   font: inherit;
-  font-size: 14px;
+  font-size: 13px;
+  font-weight: 500;
   cursor: pointer;
+  transition: opacity 120ms ease;
 }
 
 #save-button:hover {
-  background: #0d8c6d;
+  opacity: 0.85;
 }
 
 #save-button:focus-visible {
-  outline: 2px solid #10a37f;
+  outline: 2px solid #000;
   outline-offset: 2px;
 }
 
-.folder-preview,
-.save-status,
-.secondary-text {
-  margin: 8px 0 0;
-  color: #888;
+.folder-preview {
+  margin: 6px 0 0;
   font-size: 12px;
+  font-weight: 400;
+  opacity: 0.45;
 }
 
 .save-status {
-  min-height: 18px;
+  margin: 4px 0 0;
+  font-size: 12px;
+  font-weight: 400;
+  min-height: 16px;
 }
 
 .save-status.success {
@@ -187,13 +195,15 @@ body {
   color: #d14343;
 }
 
+/* Shortcut */
+
 .shortcut-line {
   margin: 0;
   display: flex;
   align-items: center;
   gap: 5px;
-  color: #666;
-  font-size: 14px;
+  font-size: 13px;
+  font-weight: 400;
 }
 
 .shortcut-line > span:first-child {
@@ -203,54 +213,63 @@ body {
 kbd {
   min-width: 28px;
   padding: 3px 6px;
-  border: 1px solid #ddd;
+  border: none;
   border-radius: 4px;
-  background: #fafaf9;
-  color: #1a1a1a;
+  background: #f7f7f5;
+  color: #000;
   font-family: inherit;
   font-size: 12px;
+  font-weight: 500;
   text-align: center;
-  box-shadow: 0 1px 0 #ddd;
 }
 
+.secondary-text {
+  margin: 6px 0 0;
+  font-size: 12px;
+  font-weight: 400;
+  opacity: 0.45;
+}
+
+/* History */
+
 .history-list {
-  min-height: 36px;
+  min-height: 28px;
 }
 
 .history-item {
   margin: 0;
-  padding: 8px 0;
-  border-bottom: 1px solid #eee;
-  color: #333;
+  padding: 10px 0;
+  border-bottom: 1px solid #e6e6e6;
   font-size: 13px;
-  line-height: 1.5;
+  font-weight: 400;
+  line-height: 1.4;
   cursor: text;
   user-select: all;
 }
 
 .history-item:last-child {
   border-bottom: none;
+  padding-bottom: 0;
 }
 
 .empty-history {
   margin: 0;
-  padding: 8px 0;
-  color: #888;
+  padding: 4px 0;
   font-size: 13px;
+  font-weight: 400;
+  opacity: 0.45;
 }
 
 .version {
-  color: #888;
+  margin-top: 24px;
   font-size: 11px;
+  font-weight: 400;
   text-align: center;
+  opacity: 0.35;
 }
 
 @media (max-width: 520px) {
   body {
     padding: 16px;
-  }
-
-  .folder-controls {
-    align-items: stretch;
   }
 }

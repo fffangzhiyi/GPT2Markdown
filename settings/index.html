@@ -19,21 +19,15 @@
       <fieldset class="save-mode-group">
         <legend class="save-mode-legend">保存方式</legend>
 
-        <label class="radio-label">
-          <input type="radio" name="saveMode" value="ask" id="save-mode-ask">
-          <span class="radio-text">
-            <span class="radio-title">每次询问保存位置</span>
-            <span class="radio-desc">导出时弹出系统对话框，可保存到任意位置</span>
-          </span>
-        </label>
+        <div class="mode-card" id="mode-card-ask" role="radio" aria-checked="true" tabindex="0">
+          <span class="mode-title">每次询问保存位置</span>
+          <span class="mode-desc">导出时弹出系统对话框，可保存到任意位置</span>
+        </div>
 
-        <label class="radio-label">
-          <input type="radio" name="saveMode" value="auto" id="save-mode-auto">
-          <span class="radio-text">
-            <span class="radio-title">自动保存到下载文件夹</span>
-            <span class="radio-desc">直接保存，不弹出对话框</span>
-          </span>
-        </label>
+        <div class="mode-card" id="mode-card-auto" role="radio" aria-checked="false" tabindex="0">
+          <span class="mode-title">自动保存到下载文件夹</span>
+          <span class="mode-desc">直接保存，不弹出对话框</span>
+        </div>
       </fieldset>
 
       <div id="folder-section" class="folder-section">
@@ -59,7 +53,7 @@
     <section class="settings-card" aria-labelledby="history-heading">
       <h2 id="history-heading">导出历史</h2>
       <div id="history-list" class="history-list" aria-live="polite">
-        <p id="history-loading" class="empty-history">正在加载...</p>
+        <p class="empty-history">正在加载...</p>
       </div>
     </section>
 

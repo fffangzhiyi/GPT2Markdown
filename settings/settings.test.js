@@ -5,14 +5,20 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 
 function createElement(id) {
-  const element = {
+  return {
     id,
     value: '',
     textContent: '',
     className: '',
-    checked: false,
     children: [],
     listeners: {},
+    attributes: {},
+    classList: {
+      _classes: [],
+      add(cls) { if (!this._classes.includes(cls)) this._classes.push(cls); },
+      remove(cls) { this._classes = this._classes.filter(c => c !== cls); },
+      contains(cls) { return this._classes.includes(cls); }
+    },
     appendChild(child) {
       this.children.push(child);
     },
@@ -22,33 +28,18 @@ function createElement(id) {
     addEventListener(type, listener) {
       this.listeners[type] = listener;
     },
+    setAttribute(name, value) {
+      this.attributes[name] = value;
+    },
+    getAttribute(name) {
+      return this.attributes[name] || null;
+    },
     click() {
       if (this.listeners.click) {
         return this.listeners.click();
       }
     }
   };
-
-  element.classList = {
-    add(value) {
-      element.className = value;
-    },
-    remove(value) {
-      if (element.className === value) {
-        element.className = '';
-      }
-    }
-  };
-
-  return element;
-}
-
-function createRadioElement(id, value) {
-  const element = createElement(id);
-  element.type = 'radio';
-  element.name = 'saveMode';
-  element.value = value;
-  return element;
 }
 
 function createContext(storageState = {}) {
@@ -58,9 +49,8 @@ function createContext(storageState = {}) {
     'save-button': createElement('save-button'),
     'save-status': createElement('save-status'),
     'history-list': createElement('history-list'),
-    'history-loading': createElement('history-loading'),
-    'save-mode-ask': createRadioElement('save-mode-ask', 'ask'),
-    'save-mode-auto': createRadioElement('save-mode-auto', 'auto'),
+    'mode-card-ask': createElement('mode-card-ask'),
+    'mode-card-auto': createElement('mode-card-auto'),
     'folder-section': createElement('folder-section')
   };
   const documentListeners = {};
@@ -85,9 +75,7 @@ function createContext(storageState = {}) {
         sync: {
           async get(key) {
             if (typeof key === 'string') {
-              return {
-                [key]: storageState[key]
-              };
+              return { [key]: storageState[key] };
             }
             return storageState;
           },
@@ -99,10 +87,7 @@ function createContext(storageState = {}) {
       }
     },
     setTimeout(callback, delay) {
-      timeouts.push({
-        callback,
-        delay
-      });
+      timeouts.push({ callback, delay });
       return timeouts.length;
     },
     elements,
@@ -139,112 +124,87 @@ async function test(name, fn) {
 }
 
 (async () => {
-  await test('loads saveMode=ask, hides folder section, no preview text', async () => {
+  await test('loads saveMode=ask, hides folder section, marks ask card selected', async () => {
     const context = createContext({
-      settings: {
-        saveMode: 'ask',
-        folderName: 'my-exports'
-      },
+      settings: { saveMode: 'ask', folderName: 'my-exports' },
       exportHistory: []
     });
     loadSettings(context);
     await initialize(context);
 
-    assert.strictEqual(context.elements['save-mode-ask'].checked, true);
-    assert.strictEqual(context.elements['save-mode-auto'].checked, false);
-    assert.strictEqual(context.elements['folder-section'].className, 'hidden');
+    assert.strictEqual(context.elements['mode-card-ask'].getAttribute('aria-checked'), 'true');
+    assert.strictEqual(context.elements['mode-card-auto'].getAttribute('aria-checked'), 'false');
+    assert.strictEqual(context.elements['folder-section'].classList.contains('hidden'), true);
     assert.strictEqual(context.elements['folder-preview'].textContent, '');
   });
 
   await test('loads saveMode=auto, shows folder section with preview', async () => {
     const context = createContext({
-      settings: {
-        saveMode: 'auto',
-        folderName: 'custom-folder'
-      },
+      settings: { saveMode: 'auto', folderName: 'custom-folder' },
       exportHistory: [
-        {
-          timestamp: 1780000000000,
-          filename: 'test.md',
-          title: 'Test Chat'
-        }
+        { timestamp: 1780000000000, filename: 'test.md', title: 'Test Chat' }
       ]
     });
     loadSettings(context);
     await initialize(context);
 
-    assert.strictEqual(context.elements['save-mode-auto'].checked, true);
-    assert.strictEqual(context.elements['save-mode-ask'].checked, false);
-    assert.strictEqual(context.elements['folder-section'].className, '');
+    assert.strictEqual(context.elements['mode-card-auto'].getAttribute('aria-checked'), 'true');
+    assert.strictEqual(context.elements['mode-card-ask'].getAttribute('aria-checked'), 'false');
+    assert.strictEqual(context.elements['folder-section'].classList.contains('hidden'), false);
     assert.strictEqual(context.elements['folder-name'].value, 'custom-folder');
     assert.strictEqual(context.elements['folder-preview'].textContent, '文件保存到: 下载/custom-folder/');
   });
 
   await test('defaults to saveMode=ask when settings missing', async () => {
-    const context = createContext({
-      exportHistory: []
-    });
+    const context = createContext({ exportHistory: [] });
     loadSettings(context);
     await initialize(context);
 
-    assert.strictEqual(context.elements['save-mode-ask'].checked, true);
-    assert.strictEqual(context.elements['folder-section'].className, 'hidden');
+    assert.strictEqual(context.elements['mode-card-ask'].getAttribute('aria-checked'), 'true');
+    assert.strictEqual(context.elements['folder-section'].classList.contains('hidden'), true);
   });
 
-  await test('switch to auto saves saveMode and shows folder section', async () => {
+  await test('clicking auto card saves saveMode and shows folder section', async () => {
     const context = createContext({
-      settings: {
-        saveMode: 'ask',
-        folderName: 'chatgpt-inbox'
-      },
+      settings: { saveMode: 'ask', folderName: 'chatgpt-inbox' },
       exportHistory: []
     });
     loadSettings(context);
     await initialize(context);
 
-    context.elements['save-mode-auto'].checked = true;
-    await context.elements['save-mode-auto'].listeners.change();
+    await context.elements['mode-card-auto'].click();
 
+    assert.strictEqual(context.elements['mode-card-auto'].getAttribute('aria-checked'), 'true');
+    assert.strictEqual(context.elements['mode-card-ask'].getAttribute('aria-checked'), 'false');
     assertJsonEqual(context.setCalls[0], {
-      settings: {
-        saveMode: 'auto',
-        folderName: 'chatgpt-inbox'
-      }
+      settings: { saveMode: 'auto', folderName: 'chatgpt-inbox' }
     });
-    assert.strictEqual(context.elements['folder-section'].className, '');
+    assert.strictEqual(context.elements['folder-section'].classList.contains('hidden'), false);
     assert.strictEqual(context.elements['folder-preview'].textContent, '文件保存到: 下载/chatgpt-inbox/');
   });
 
-  await test('switch to ask saves saveMode and hides folder section', async () => {
+  await test('clicking ask card saves saveMode and hides folder section', async () => {
     const context = createContext({
-      settings: {
-        saveMode: 'auto',
-        folderName: 'chatgpt-inbox'
-      },
+      settings: { saveMode: 'auto', folderName: 'chatgpt-inbox' },
       exportHistory: []
     });
     loadSettings(context);
     await initialize(context);
 
-    context.elements['save-mode-ask'].checked = true;
-    await context.elements['save-mode-ask'].listeners.change();
+    await context.elements['mode-card-ask'].click();
 
+    assert.strictEqual(context.elements['mode-card-ask'].getAttribute('aria-checked'), 'true');
+    assert.strictEqual(context.elements['mode-card-auto'].getAttribute('aria-checked'), 'false');
     assertJsonEqual(context.setCalls[0], {
-      settings: {
-        saveMode: 'ask',
-        folderName: 'chatgpt-inbox'
-      }
+      settings: { saveMode: 'ask', folderName: 'chatgpt-inbox' }
     });
-    assert.strictEqual(context.elements['folder-section'].className, 'hidden');
+    assert.strictEqual(context.elements['folder-section'].classList.contains('hidden'), true);
     assert.strictEqual(context.elements['folder-preview'].textContent, '');
   });
 
   await test('saves folderName preserves existing saveMode', async () => {
     const context = createContext({
-      settings: {
-        saveMode: 'auto',
-        folderName: 'old-folder'
-      },
+      settings: { saveMode: 'auto', folderName: 'old-folder' },
       exportHistory: []
     });
     loadSettings(context);
@@ -254,10 +214,7 @@ async function test(name, fn) {
     await context.elements['save-button'].click();
 
     assertJsonEqual(context.setCalls[0], {
-      settings: {
-        saveMode: 'auto',
-        folderName: 'new-folder'
-      }
+      settings: { saveMode: 'auto', folderName: 'new-folder' }
     });
     assert.strictEqual(context.elements['folder-name'].value, 'new-folder');
     assert.strictEqual(context.elements['folder-preview'].textContent, '文件保存到: 下载/new-folder/');
@@ -265,9 +222,7 @@ async function test(name, fn) {
 
   await test('shows warning for empty folderName', async () => {
     const context = createContext({
-      settings: {
-        saveMode: 'auto'
-      },
+      settings: { saveMode: 'auto' },
       exportHistory: []
     });
     loadSettings(context);
@@ -277,13 +232,11 @@ async function test(name, fn) {
     await context.elements['save-button'].click();
 
     assert.strictEqual(context.setCalls.length, 0);
-    assert.strictEqual(context.elements['save-status'].textContent, '⚠️ 文件夹名称不能为空');
+    assert.strictEqual(context.elements['save-status'].textContent, '文件夹名称不能为空');
   });
 
   await test('shows no history message when empty', async () => {
-    const context = createContext({
-      exportHistory: []
-    });
+    const context = createContext({ exportHistory: [] });
     loadSettings(context);
     await initialize(context);
 
