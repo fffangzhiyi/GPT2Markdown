@@ -9,6 +9,7 @@ function createElement(id) {
     id,
     textContent: '',
     disabled: false,
+    hidden: true,
     className: '',
     classList: {
       values: new Set(),
@@ -35,13 +36,18 @@ function createElement(id) {
 
 function createContext(exportResponse) {
   const elements = {
-    'export-btn': createElement('export-btn'),
+    'full-export-btn': createElement('full-export-btn'),
+    'select-export-btn': createElement('select-export-btn'),
+    'batch-export-btn': createElement('batch-export-btn'),
+    'conversation-actions': createElement('conversation-actions'),
+    'history-actions': createElement('history-actions'),
+    'other-message': createElement('other-message'),
     'voice-warning': createElement('voice-warning'),
     status: createElement('status'),
     'last-export': createElement('last-export'),
     'settings-link': createElement('settings-link')
   };
-  elements['export-btn'].textContent = '导出当前对话';
+  elements['full-export-btn'].textContent = '全量导出';
 
   const context = {
     console,
@@ -53,11 +59,13 @@ function createContext(exportResponse) {
     },
     chrome: {
       runtime: {
+        lastError: null,
         sendMessage(message, callback) {
           if (message.action === 'getExportStatus') {
             callback({
               lastExportTime: null,
-              lastExportFilename: ''
+              lastExportFilename: '',
+              pageContext: 'conversation'
             });
             return;
           }
@@ -65,6 +73,9 @@ function createContext(exportResponse) {
         },
         openOptionsPage() {}
       }
+    },
+    window: {
+      close() {}
     },
     elements
   };
@@ -91,7 +102,7 @@ function createErrorResponse(error) {
 function runExportScenario(response) {
   const context = createContext(response);
   loadPopup(context);
-  context.elements['export-btn'].click();
+  context.elements['full-export-btn'].click();
   return context;
 }
 

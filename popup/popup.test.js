@@ -10,6 +10,7 @@ function createElement(id) {
     textContent: '',
     href: '',
     disabled: false,
+    hidden: true,
     className: '',
     classList: {
       values: new Set(),
@@ -40,15 +41,25 @@ function createElement(id) {
 function createContext(responses = {}) {
   const elements = {
     'export-btn': createElement('export-btn'),
+    'full-export-btn': createElement('full-export-btn'),
+    'select-export-btn': createElement('select-export-btn'),
+    'batch-export-btn': createElement('batch-export-btn'),
+    'conversation-actions': createElement('conversation-actions'),
+    'history-actions': createElement('history-actions'),
+    'other-message': createElement('other-message'),
     'voice-warning': createElement('voice-warning'),
     status: createElement('status'),
     'last-export': createElement('last-export'),
     'settings-link': createElement('settings-link')
   };
   elements['export-btn'].textContent = '导出当前对话';
+  elements['full-export-btn'].textContent = '全量导出';
+  elements['select-export-btn'].textContent = '选择导出';
+  elements['batch-export-btn'].textContent = '批量导出';
 
   const sentMessages = [];
   const openedOptionsPages = [];
+  const closedWindows = [];
   const context = {
     console,
     Date,
@@ -59,6 +70,7 @@ function createContext(responses = {}) {
     },
     chrome: {
       runtime: {
+        lastError: null,
         sendMessage(message, callback) {
           sentMessages.push(message);
           const response = responses[message.action];
@@ -73,9 +85,15 @@ function createContext(responses = {}) {
         }
       }
     },
+    window: {
+      close() {
+        closedWindows.push(true);
+      }
+    },
     elements,
     sentMessages,
-    openedOptionsPages
+    openedOptionsPages,
+    closedWindows
   };
 
   context.globalThis = context;
@@ -106,7 +124,8 @@ async function test(name, fn) {
     const context = createContext({
       getExportStatus: {
         lastExportTime: new Date('2026-06-02T20:30:00').getTime(),
-        lastExportFilename: 'file.md'
+        lastExportFilename: 'file.md',
+        pageContext: 'conversation'
       }
     });
 
@@ -122,7 +141,8 @@ async function test(name, fn) {
     const context = createContext({
       getExportStatus: {
         lastExportTime: null,
-        lastExportFilename: ''
+        lastExportFilename: '',
+        pageContext: 'conversation'
       }
     });
 
@@ -147,13 +167,13 @@ async function test(name, fn) {
     });
 
     loadPopup(context);
-    context.elements['export-btn'].click();
+    context.elements['full-export-btn'].click();
 
     assertJsonEqual(context.sentMessages[1], {
       action: 'exportCurrentConversation'
     });
-    assert.strictEqual(context.elements['export-btn'].disabled, false);
-    assert.strictEqual(context.elements['export-btn'].textContent, '导出当前对话');
+    assert.strictEqual(context.elements['full-export-btn'].disabled, false);
+    assert.strictEqual(context.elements['full-export-btn'].textContent, '全量导出');
     assert.strictEqual(context.elements.status.textContent, '✅ 已导出: 2026-06-02-Title.md');
     assert.strictEqual(context.elements.status.className, 'status success');
     assert.strictEqual(context.elements['voice-warning'].textContent, '');
@@ -167,7 +187,8 @@ async function test(name, fn) {
     const context = createContext({
       getExportStatus: {
         lastExportTime: null,
-        lastExportFilename: ''
+        lastExportFilename: '',
+        pageContext: 'conversation'
       },
       exportCurrentConversation: {
         action: 'exportResult',
@@ -180,7 +201,7 @@ async function test(name, fn) {
     });
 
     loadPopup(context);
-    context.elements['export-btn'].click();
+    context.elements['full-export-btn'].click();
 
     assert.strictEqual(
       context.elements['voice-warning'].textContent,
@@ -194,7 +215,8 @@ async function test(name, fn) {
     const context = createContext({
       getExportStatus: {
         lastExportTime: null,
-        lastExportFilename: ''
+        lastExportFilename: '',
+        pageContext: 'conversation'
       },
       exportCurrentConversation(callback) {
         exportCallback = callback;
@@ -202,11 +224,11 @@ async function test(name, fn) {
     });
 
     loadPopup(context);
-    context.elements['export-btn'].click();
+    context.elements['full-export-btn'].click();
 
-    assert.strictEqual(context.elements['export-btn'].disabled, true);
-    assert.strictEqual(context.elements['export-btn'].textContent, '导出中...');
-    assert.strictEqual(context.elements['export-btn'].classList.contains('loading'), true);
+    assert.strictEqual(context.elements['full-export-btn'].disabled, true);
+    assert.strictEqual(context.elements['full-export-btn'].textContent, '导出中...');
+    assert.strictEqual(context.elements['full-export-btn'].classList.contains('loading'), true);
 
     exportCallback({
       action: 'exportResult',
@@ -216,8 +238,8 @@ async function test(name, fn) {
       }
     });
 
-    assert.strictEqual(context.elements['export-btn'].disabled, false);
-    assert.strictEqual(context.elements['export-btn'].classList.contains('loading'), false);
+    assert.strictEqual(context.elements['full-export-btn'].disabled, false);
+    assert.strictEqual(context.elements['full-export-btn'].classList.contains('loading'), false);
   });
 
   await test('maps export error codes to Chinese messages', () => {
@@ -235,7 +257,8 @@ async function test(name, fn) {
       const context = createContext({
         getExportStatus: {
           lastExportTime: null,
-          lastExportFilename: ''
+          lastExportFilename: '',
+          pageContext: 'conversation'
         },
         exportCurrentConversation: {
           action: 'exportResult',
@@ -247,7 +270,7 @@ async function test(name, fn) {
       });
 
       loadPopup(context);
-      context.elements['export-btn'].click();
+      context.elements['full-export-btn'].click();
 
       assert.strictEqual(context.elements.status.textContent, message);
       assert.strictEqual(context.elements.status.className, 'status error');
@@ -258,7 +281,8 @@ async function test(name, fn) {
     const context = createContext({
       getExportStatus: {
         lastExportTime: null,
-        lastExportFilename: ''
+        lastExportFilename: '',
+        pageContext: 'conversation'
       }
     });
 
@@ -266,5 +290,98 @@ async function test(name, fn) {
     context.elements['settings-link'].click();
 
     assert.strictEqual(context.openedOptionsPages.length, 1);
+  });
+
+  await test('shows conversation actions on a conversation page', () => {
+    const context = createContext({
+      getExportStatus: {
+        lastExportTime: null,
+        lastExportFilename: '',
+        pageContext: 'conversation'
+      }
+    });
+
+    loadPopup(context);
+
+    assert.strictEqual(context.elements['conversation-actions'].hidden, false);
+    assert.strictEqual(context.elements['history-actions'].hidden, true);
+    assert.strictEqual(context.elements['other-message'].hidden, true);
+  });
+
+  await test('shows batch actions on ChatGPT history', () => {
+    const context = createContext({
+      getExportStatus: {
+        lastExportTime: null,
+        lastExportFilename: '',
+        pageContext: 'history'
+      }
+    });
+
+    loadPopup(context);
+
+    assert.strictEqual(context.elements['conversation-actions'].hidden, true);
+    assert.strictEqual(context.elements['history-actions'].hidden, false);
+    assert.strictEqual(context.elements['other-message'].hidden, true);
+  });
+
+  await test('shows usage hint outside ChatGPT', () => {
+    const context = createContext({
+      getExportStatus: {
+        lastExportTime: null,
+        lastExportFilename: '',
+        pageContext: 'other'
+      }
+    });
+
+    loadPopup(context);
+
+    assert.strictEqual(context.elements['conversation-actions'].hidden, true);
+    assert.strictEqual(context.elements['history-actions'].hidden, true);
+    assert.strictEqual(context.elements['other-message'].hidden, false);
+  });
+
+  await test('selection button enters selection mode and closes popup', () => {
+    const context = createContext({
+      getExportStatus: {
+        lastExportTime: null,
+        lastExportFilename: '',
+        pageContext: 'conversation'
+      },
+      enterSelectionMode: {
+        status: 'success'
+      }
+    });
+
+    loadPopup(context);
+    context.elements['select-export-btn'].click();
+
+    assertJsonEqual(context.sentMessages.slice(1), [
+      {
+        action: 'enterSelectionMode'
+      }
+    ]);
+    assert.strictEqual(context.closedWindows.length, 1);
+  });
+
+  await test('batch button shows development status without messaging or closing', () => {
+    const context = createContext({
+      getExportStatus: {
+        lastExportTime: null,
+        lastExportFilename: '',
+        pageContext: 'history'
+      }
+    });
+
+    loadPopup(context);
+    context.elements['batch-export-btn'].click();
+
+    assertJsonEqual(context.sentMessages, [
+      {
+        action: 'getExportStatus'
+      }
+    ]);
+    assert.strictEqual(context.closedWindows.length, 0);
+    assert.strictEqual(context.elements.status.textContent, '此功能开发中，即将上线');
+    assert.strictEqual(context.elements.status.className, 'status success');
   });
 })();

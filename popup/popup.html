@@ -7,12 +7,21 @@
 <body>
   <div class="container">
     <h1 class="title">ChatGPT → Markdown</h1>
-    <button id="export-btn" class="export-btn">导出当前对话</button>
+    <div id="conversation-actions" class="actions-section" hidden>
+      <button id="full-export-btn" class="export-btn">全量导出</button>
+      <button id="select-export-btn" class="export-btn secondary-btn">选择导出</button>
+    </div>
+    <div id="history-actions" class="actions-section" hidden>
+      <button id="batch-export-btn" class="export-btn">批量导出</button>
+    </div>
+    <div id="other-message" class="actions-section" hidden>
+      <p class="other-hint">请在 ChatGPT 页面使用</p>
+    </div>
     <p id="voice-warning" class="voice-warning"></p>
     <p id="status" class="status"></p>
     <p class="footer">
       <span id="last-export"></span>
-      <a id="settings-link" href="#"><span class="settings-icon">⚙</span> 设置</a>
+      <a id="settings-link" href="#"><span class="settings-icon">&#9881;</span> 设置</a>
     </p>
   </div>
   <script src="popup.js"></script>

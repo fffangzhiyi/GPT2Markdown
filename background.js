@@ -13,6 +13,16 @@ function isChatGPTTab(tab) {
   return Boolean(tab && tab.url && tab.url.includes(CHATGPT_URL_PART));
 }
 
+function getPageContext(tab) {
+  if (!tab || !tab.url || !tab.url.includes(CHATGPT_URL_PART)) {
+    return 'other';
+  }
+  if (tab.url.includes('/c/')) {
+    return 'conversation';
+  }
+  return 'history';
+}
+
 async function showNotChatGPTBadge() {
   await chrome.action.setBadgeText({
     text: '!'
@@ -205,9 +215,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         exportHistory = []
       } = await chrome.storage.sync.get('exportHistory');
       const last = exportHistory[0] || null;
+      const tab = await getActiveTab();
       sendResponse({
         lastExportTime: last ? last.timestamp : null,
-        lastExportFilename: last ? last.filename : ''
+        lastExportFilename: last ? last.filename : '',
+        pageContext: getPageContext(tab)
       });
     })();
     return true;
@@ -216,6 +228,86 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === EXPORT_ACTION) {
     (async () => {
       const response = await exportFromActiveTab();
+      sendResponse(response);
+    })();
+    return true;
+  }
+
+  if (message.action === 'enterSelectionMode') {
+    (async () => {
+      const tab = await getActiveTab();
+      if (!isChatGPTTab(tab)) {
+        sendResponse({
+          status: 'error',
+          detail: {
+            error: 'NOT_ON_CHATGPT_PAGE'
+          }
+        });
+        return;
+      }
+      if (getPageContext(tab) !== 'conversation') {
+        sendResponse({
+          status: 'error',
+          detail: {
+            error: 'NOT_A_CONVERSATION_PAGE'
+          }
+        });
+        return;
+      }
+      try {
+        await chrome.tabs.sendMessage(tab.id, {
+          action: 'enterSelectionMode'
+        });
+        sendResponse({
+          status: 'success'
+        });
+      } catch (error) {
+        sendResponse({
+          status: 'error',
+          detail: {
+            error: 'CONTENT_SCRIPT_NOT_READY'
+          }
+        });
+      }
+    })();
+    return true;
+  }
+
+  if (message.action === 'enterBatchMode') {
+    (async () => {
+      const tab = await getActiveTab();
+      if (!isChatGPTTab(tab)) {
+        sendResponse({
+          status: 'error',
+          detail: {
+            error: 'NOT_ON_CHATGPT_PAGE'
+          }
+        });
+        return;
+      }
+      try {
+        await chrome.tabs.sendMessage(tab.id, {
+          action: 'enterBatchMode'
+        });
+        sendResponse({
+          status: 'success'
+        });
+      } catch (error) {
+        sendResponse({
+          status: 'error',
+          detail: {
+            error: 'CONTENT_SCRIPT_NOT_READY'
+          }
+        });
+      }
+    })();
+    return true;
+  }
+
+  if (message.action === 'processSelectionExportResult') {
+    (async () => {
+      const folderName = await getFolderName();
+      const response = await processExportResponse(message.response, folderName);
       sendResponse(response);
     })();
     return true;

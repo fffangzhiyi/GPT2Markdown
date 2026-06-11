@@ -369,7 +369,8 @@ async function test(name, fn) {
     assert.strictEqual(result.keepAlive, true);
     assertJsonEqual(result.response, {
       lastExportTime: 123,
-      lastExportFilename: 'latest.md'
+      lastExportFilename: 'latest.md',
+      pageContext: 'conversation'
     });
   });
 
@@ -383,7 +384,151 @@ async function test(name, fn) {
 
     assertJsonEqual(result.response, {
       lastExportTime: null,
-      lastExportFilename: ''
+      lastExportFilename: '',
+      pageContext: 'conversation'
+    });
+  });
+
+  await test('getExportStatus reports history page context', async () => {
+    const context = createContext();
+    context.chrome.tabs.query = async () => [
+      {
+        id: 123,
+        url: 'https://chatgpt.com/'
+      }
+    ];
+    loadBackground(context);
+
+    const result = await sendRuntimeMessage(context, {
+      action: 'getExportStatus'
+    });
+
+    assert.strictEqual(result.response.pageContext, 'history');
+  });
+
+  await test('getExportStatus reports other page context outside ChatGPT', async () => {
+    const context = createContext();
+    context.chrome.tabs.query = async () => [
+      {
+        id: 123,
+        url: 'https://example.com/'
+      }
+    ];
+    loadBackground(context);
+
+    const result = await sendRuntimeMessage(context, {
+      action: 'getExportStatus'
+    });
+
+    assert.strictEqual(result.response.pageContext, 'other');
+  });
+
+  await test('enterSelectionMode rejects ChatGPT history pages', async () => {
+    const context = createContext();
+    context.chrome.tabs.query = async () => [
+      {
+        id: 123,
+        url: 'https://chatgpt.com/'
+      }
+    ];
+    loadBackground(context);
+
+    const result = await sendRuntimeMessage(context, {
+      action: 'enterSelectionMode'
+    });
+
+    assert.strictEqual(result.keepAlive, true);
+    assertJsonEqual(result.response, {
+      status: 'error',
+      detail: {
+        error: 'NOT_A_CONVERSATION_PAGE'
+      }
+    });
+  });
+
+  await test('enterSelectionMode forwards to the active conversation tab', async () => {
+    const context = createContext();
+    loadBackground(context);
+
+    const result = await sendRuntimeMessage(context, {
+      action: 'enterSelectionMode'
+    });
+
+    assert.strictEqual(result.keepAlive, true);
+    assertJsonEqual(context.sentMessages[0], {
+      tabId: 123,
+      message: {
+        action: 'enterSelectionMode'
+      }
+    });
+    assertJsonEqual(result.response, {
+      status: 'success'
+    });
+  });
+
+  await test('enterBatchMode forwards on ChatGPT and reports messaging failures', async () => {
+    const context = createContext();
+    loadBackground(context);
+
+    const success = await sendRuntimeMessage(context, {
+      action: 'enterBatchMode'
+    });
+
+    assertJsonEqual(context.sentMessages[0], {
+      tabId: 123,
+      message: {
+        action: 'enterBatchMode'
+      }
+    });
+    assertJsonEqual(success.response, {
+      status: 'success'
+    });
+
+    context.chrome.tabs.sendMessage = async () => {
+      throw new Error('not ready');
+    };
+    const failure = await sendRuntimeMessage(context, {
+      action: 'enterBatchMode'
+    });
+
+    assertJsonEqual(failure.response, {
+      status: 'error',
+      detail: {
+        error: 'CONTENT_SCRIPT_NOT_READY'
+      }
+    });
+  });
+
+  await test('processSelectionExportResult downloads selected markdown', async () => {
+    const context = createContext();
+    loadBackground(context);
+
+    const result = await sendRuntimeMessage(context, {
+      action: 'processSelectionExportResult',
+      response: {
+        action: 'exportResult',
+        status: 'success',
+        detail: {
+          filename: 'Selected.md',
+          title: 'Selected',
+          markdown: '# Selected\n'
+        }
+      }
+    });
+
+    assert.strictEqual(result.keepAlive, true);
+    assertJsonEqual(context.downloads[0], {
+      url: 'data:text/markdown;charset=utf-8,%23%20Selected%0A',
+      filename: 'custom-folder/Selected.md',
+      saveAs: false
+    });
+    assertJsonEqual(result.response, {
+      action: 'exportResult',
+      status: 'success',
+      detail: {
+        filename: 'Selected.md',
+        title: 'Selected'
+      }
     });
   });
 

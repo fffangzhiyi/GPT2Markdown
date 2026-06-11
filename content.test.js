@@ -8,6 +8,7 @@ function createContext() {
   const windowListeners = {};
   const runtimeListeners = [];
   const postedMessages = [];
+  const runtimeMessages = [];
   const context = {
     console,
     setTimeout(callback) {
@@ -29,6 +30,9 @@ function createContext() {
     },
     chrome: {
       runtime: {
+        sendMessage(message) {
+          runtimeMessages.push(message);
+        },
         onMessage: {
           addListener(listener) {
             runtimeListeners.push(listener);
@@ -38,7 +42,8 @@ function createContext() {
     },
     windowListeners,
     runtimeListeners,
-    postedMessages
+    postedMessages,
+    runtimeMessages
   };
 
   context.globalThis = context;
@@ -170,5 +175,87 @@ async function test(name, fn) {
 
     assert.strictEqual(runtime.keepAlive, false);
     assert.strictEqual(context.postedMessages.length, 0);
+  });
+
+  await test('forwards enterSelectionMode to the MAIN world', () => {
+    const context = createContext();
+    loadContent(context);
+
+    const runtime = sendRuntimeMessage(context, {
+      action: 'enterSelectionMode'
+    });
+
+    assert.strictEqual(runtime.keepAlive, false);
+    assertJsonEqual(context.postedMessages[0], {
+      type: 'GPT2MD_ENTER_SELECTION'
+    });
+    assertJsonEqual(runtime.getResponse(), {
+      status: 'success'
+    });
+  });
+
+  await test('forwards exitSelectionMode to the MAIN world', () => {
+    const context = createContext();
+    loadContent(context);
+
+    const runtime = sendRuntimeMessage(context, {
+      action: 'exitSelectionMode'
+    });
+
+    assert.strictEqual(runtime.keepAlive, false);
+    assertJsonEqual(context.postedMessages[0], {
+      type: 'GPT2MD_EXIT_SELECTION'
+    });
+    assertJsonEqual(runtime.getResponse(), {
+      status: 'success'
+    });
+  });
+
+  await test('forwards enterBatchMode to the MAIN world', () => {
+    const context = createContext();
+    loadContent(context);
+
+    const runtime = sendRuntimeMessage(context, {
+      action: 'enterBatchMode'
+    });
+
+    assert.strictEqual(runtime.keepAlive, false);
+    assertJsonEqual(context.postedMessages[0], {
+      type: 'GPT2MD_ENTER_BATCH'
+    });
+    assertJsonEqual(runtime.getResponse(), {
+      status: 'success'
+    });
+  });
+
+  await test('relays selection export results to the background download pipeline', async () => {
+    const context = createContext();
+    loadContent(context);
+
+    await dispatchWindowMessage(context, {
+      type: 'GPT2MD_EXPORT_RESULT',
+      selectionExport: true,
+      status: 'success',
+      detail: {
+        filename: 'Selected.md',
+        title: 'Selected',
+        markdown: '# Selected\n',
+        selectedCount: 1
+      }
+    });
+
+    assertJsonEqual(context.runtimeMessages[0], {
+      action: 'processSelectionExportResult',
+      response: {
+        action: 'exportResult',
+        status: 'success',
+        detail: {
+          filename: 'Selected.md',
+          title: 'Selected',
+          markdown: '# Selected\n',
+          selectedCount: 1
+        }
+      }
+    });
   });
 })();
