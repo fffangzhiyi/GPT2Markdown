@@ -69,7 +69,9 @@ function createContext(exportResponse) {
             });
             return;
           }
-          callback(exportResponse);
+          if (callback) {
+            callback(exportResponse);
+          }
         },
         openOptionsPage() {}
       }

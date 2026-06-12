@@ -6,6 +6,7 @@
   const SELECTION_ENTER_TYPE = 'GPT2MD_ENTER_SELECTION';
   const SELECTION_EXIT_TYPE = 'GPT2MD_EXIT_SELECTION';
   const BATCH_ENTER_TYPE = 'GPT2MD_ENTER_BATCH';
+  const PREFETCH_TYPE = 'GPT2MD_PREFETCH';
   const DEFAULT_FOLDER_NAME = 'chatgpt-inbox';
   const EXPORT_TIMEOUT_MS = 15000;
 
@@ -93,6 +94,13 @@
       sendResponse({
         status: 'success'
       });
+      return false;
+    }
+
+    if (message.action === 'prefetchConversation') {
+      globalScope.window.postMessage({
+        type: PREFETCH_TYPE
+      }, '*');
       return false;
     }
 

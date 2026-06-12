@@ -228,6 +228,20 @@ async function test(name, fn) {
     });
   });
 
+  await test('forwards prefetchConversation to the MAIN world', () => {
+    const context = createContext();
+    loadContent(context);
+
+    const runtime = sendRuntimeMessage(context, {
+      action: 'prefetchConversation'
+    });
+
+    assert.strictEqual(runtime.keepAlive, false);
+    assertJsonEqual(context.postedMessages[0], {
+      type: 'GPT2MD_PREFETCH'
+    });
+  });
+
   await test('relays selection export results to the background download pipeline', async () => {
     const context = createContext();
     loadContent(context);

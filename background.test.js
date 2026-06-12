@@ -12,6 +12,7 @@ function createContext(overrides = {}) {
   const downloads = [];
   const filenameSuggestions = [];
   const badgeTexts = [];
+  const badgeColors = [];
   const markdownDataUrl = 'data:text/markdown;charset=utf-8,%23%20Title%0A';
   const storageState = {
     settings: {
@@ -88,6 +89,9 @@ function createContext(overrides = {}) {
       action: {
         setBadgeText: async (payload) => {
           badgeTexts.push(payload.text);
+        },
+        setBadgeBackgroundColor: async (payload) => {
+          badgeColors.push(payload.color);
         }
       },
       storage: {
@@ -136,6 +140,7 @@ function createContext(overrides = {}) {
     filenameSuggestions,
     markdownDataUrl,
     badgeTexts,
+    badgeColors,
     storageState,
     ...overrides
   };
@@ -202,6 +207,8 @@ async function test(name, fn) {
         title: 'Title'
       }
     ]);
+    assertJsonEqual(context.badgeTexts, ['⏳', '']);
+    assertJsonEqual(context.badgeColors, ['#666']);
   });
 
   await test('ask mode: keyboard command downloads without filename, saveAs true, suggests filename in listener', async () => {
@@ -351,6 +358,19 @@ async function test(name, fn) {
     assert.strictEqual(context.sentMessages.length, 0);
   });
 
+  await test('keyboard command clears loading badge when tab messaging fails', async () => {
+    const context = createContext();
+    context.chrome.tabs.sendMessage = async () => {
+      throw new Error('not ready');
+    };
+    loadBackground(context);
+
+    await context.commandListeners[0]('export-conversation');
+
+    assertJsonEqual(context.badgeTexts, ['⏳', '']);
+    assertJsonEqual(context.badgeColors, ['#666']);
+  });
+
   await test('getExportStatus returns latest export record', async () => {
     const context = createContext();
     context.storageState.exportHistory = [
@@ -463,6 +483,23 @@ async function test(name, fn) {
     });
     assertJsonEqual(result.response, {
       status: 'success'
+    });
+  });
+
+  await test('prefetchConversation forwards to the active ChatGPT tab', async () => {
+    const context = createContext();
+    loadBackground(context);
+
+    const result = await sendRuntimeMessage(context, {
+      action: 'prefetchConversation'
+    });
+
+    assert.strictEqual(result.keepAlive, false);
+    assertJsonEqual(context.sentMessages[0], {
+      tabId: 123,
+      message: {
+        action: 'prefetchConversation'
+      }
     });
   });
 

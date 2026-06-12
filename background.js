@@ -34,6 +34,21 @@ async function showNotChatGPTBadge() {
   }, 2000);
 }
 
+async function showLoadingBadge() {
+  await chrome.action.setBadgeText({
+    text: '⏳'
+  });
+  await chrome.action.setBadgeBackgroundColor({
+    color: '#666'
+  });
+}
+
+async function clearBadge() {
+  await chrome.action.setBadgeText({
+    text: ''
+  });
+}
+
 async function getActiveTab() {
   const tabs = await chrome.tabs.query({
     active: true,
@@ -194,6 +209,8 @@ chrome.commands.onCommand.addListener(async (command) => {
 
   const folderName = await getFolderName();
 
+  await showLoadingBadge();
+
   try {
     const response = await chrome.tabs.sendMessage(tab.id, {
       action: EXPORT_ACTION,
@@ -202,6 +219,8 @@ chrome.commands.onCommand.addListener(async (command) => {
     await processExportResponse(response, folderName);
   } catch (error) {
   }
+
+  await clearBadge();
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -302,6 +321,22 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       }
     })();
     return true;
+  }
+
+  if (message.action === 'prefetchConversation') {
+    (async () => {
+      const tab = await getActiveTab();
+      if (!isChatGPTTab(tab)) {
+        return;
+      }
+      try {
+        await chrome.tabs.sendMessage(tab.id, {
+          action: 'prefetchConversation'
+        });
+      } catch (error) {
+      }
+    })();
+    return false;
   }
 
   if (message.action === 'processSelectionExportResult') {

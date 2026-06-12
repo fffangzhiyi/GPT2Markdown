@@ -89,6 +89,12 @@ function refreshExportStatus() {
     }
 
     showPageContext(response && response.pageContext ? response.pageContext : 'other');
+
+    if (response && response.pageContext === 'conversation') {
+      chrome.runtime.sendMessage({
+        action: 'prefetchConversation'
+      });
+    }
   });
 }
 

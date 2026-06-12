@@ -78,7 +78,9 @@ function createContext(responses = {}) {
             response(callback);
             return;
           }
-          callback(response);
+          if (callback) {
+            callback(response);
+          }
         },
         openOptionsPage() {
           openedOptionsPages.push(true);
@@ -135,6 +137,27 @@ async function test(name, fn) {
       action: 'getExportStatus'
     });
     assert.strictEqual(context.elements['last-export'].textContent, '上次导出: 2026-06-02 20:30');
+    assertJsonEqual(context.sentMessages[1], {
+      action: 'prefetchConversation'
+    });
+  });
+
+  await test('does not prefetch outside a conversation page', () => {
+    const context = createContext({
+      getExportStatus: {
+        lastExportTime: null,
+        lastExportFilename: '',
+        pageContext: 'history'
+      }
+    });
+
+    loadPopup(context);
+
+    assertJsonEqual(context.sentMessages, [
+      {
+        action: 'getExportStatus'
+      }
+    ]);
   });
 
   await test('shows empty export history label when no record exists', () => {
@@ -355,7 +378,7 @@ async function test(name, fn) {
     loadPopup(context);
     context.elements['select-export-btn'].click();
 
-    assertJsonEqual(context.sentMessages.slice(1), [
+    assertJsonEqual(context.sentMessages.slice(2), [
       {
         action: 'enterSelectionMode'
       }
