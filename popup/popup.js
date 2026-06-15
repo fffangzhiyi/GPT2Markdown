@@ -10,6 +10,16 @@ var statusElement = document.getElementById('status');
 var voiceWarningElement = document.getElementById('voice-warning');
 var lastExportElement = document.getElementById('last-export');
 var settingsLink = document.getElementById('settings-link');
+var mainView = document.getElementById('main-view');
+var batchPanel = document.getElementById('batch-panel');
+var batchList = document.getElementById('batch-list');
+var batchEmpty = document.getElementById('batch-empty');
+var batchSelectedCount = document.getElementById('batch-selected-count');
+var startBatchExportBtn = document.getElementById('start-batch-export-btn');
+var reloadListBtn = document.getElementById('reload-list-btn');
+var backBtn = document.getElementById('back-btn');
+var batchStatus = document.getElementById('batch-status');
+var selectedBatchItems = new Map();
 
 function padNumber(value) {
   return String(value).padStart(2, '0');
@@ -70,7 +80,7 @@ function setButtonLoading(button, isLoading, loadingText, normalText) {
 
 function showPageContext(context) {
   conversationActions.hidden = context !== 'conversation';
-  historyActions.hidden = context !== 'history';
+  historyActions.hidden = context === 'other';
   otherMessage.hidden = context !== 'other';
 }
 
@@ -140,13 +150,211 @@ function enterSelectionMode() {
   });
 }
 
+function setBatchStatus(message, type) {
+  batchStatus.textContent = message || '';
+  batchStatus.className = type ? 'batch-status ' + type : 'batch-status';
+}
+
+function sendToActiveChatGPTTab(message, callback) {
+  chrome.tabs.query({
+    active: true,
+    url: 'https://chatgpt.com/*'
+  }, function (tabs) {
+    if (chrome.runtime.lastError) {
+      callback(null, 'TAB_QUERY_FAILED');
+      return;
+    }
+
+    var tab = tabs && tabs[0];
+    if (!tab) {
+      callback(null, 'NO_CHATGPT_TAB');
+      return;
+    }
+
+    chrome.tabs.sendMessage(tab.id, message, function (response) {
+      if (chrome.runtime.lastError) {
+        callback(null, 'CONTENT_SCRIPT_NOT_READY');
+        return;
+      }
+      callback(response, '');
+    });
+  });
+}
+
+function updateBatchSelectionState() {
+  var count = selectedBatchItems.size;
+  batchSelectedCount.textContent = '已选择 ' + count + ' 条';
+  startBatchExportBtn.disabled = count === 0;
+}
+
+function groupBatchConversations(items) {
+  var groups = [];
+  var groupsByKey = {};
+
+  for (var i = 0; i < items.length; i++) {
+    var item = items[i];
+    var key = item.projectKey || '__ungrouped__';
+    if (!groupsByKey[key]) {
+      groupsByKey[key] = {
+        title: item.projectTitle || '未分组对话',
+        items: []
+      };
+      groups.push(groupsByKey[key]);
+    }
+    groupsByKey[key].items.push(item);
+  }
+
+  return groups;
+}
+
+function renderBatchConversations(items) {
+  selectedBatchItems.clear();
+  batchList.replaceChildren();
+  batchEmpty.hidden = items.length > 0;
+
+  if (items.length === 0) {
+    batchEmpty.textContent = '未读取到对话，请先完全展开 ChatGPT 对话列表后重新读取。';
+    updateBatchSelectionState();
+    return;
+  }
+
+  var groups = groupBatchConversations(items);
+  for (var i = 0; i < groups.length; i++) {
+    var group = groups[i];
+    var section = document.createElement('div');
+    section.className = 'batch-group';
+
+    var heading = document.createElement('div');
+    heading.className = 'batch-group-title';
+    heading.textContent = group.title;
+    section.appendChild(heading);
+
+    var options = document.createElement('div');
+    options.className = 'batch-group-items';
+
+    for (var j = 0; j < group.items.length; j++) {
+      (function (item) {
+        var label = document.createElement('label');
+        label.className = 'batch-item';
+
+        var checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = false;
+        checkbox.dataset.id = item.id;
+        checkbox.dataset.title = item.title;
+        checkbox.addEventListener('change', function () {
+          if (checkbox.checked) {
+            selectedBatchItems.set(item.id, {
+              id: item.id,
+              title: item.title
+            });
+          } else {
+            selectedBatchItems.delete(item.id);
+          }
+          updateBatchSelectionState();
+        });
+
+        var title = document.createElement('span');
+        title.className = 'batch-item-title';
+        title.textContent = item.title;
+
+        label.appendChild(checkbox);
+        label.appendChild(title);
+        options.appendChild(label);
+      })(group.items[j]);
+    }
+
+    section.appendChild(options);
+    batchList.appendChild(section);
+  }
+
+  updateBatchSelectionState();
+}
+
+function loadBatchConversations() {
+  setButtonLoading(reloadListBtn, true, '读取中...', '重新读取');
+  setBatchStatus('', '');
+
+  sendToActiveChatGPTTab({
+    action: 'getBatchConversations'
+  }, function (response, error) {
+    setButtonLoading(reloadListBtn, false, '', '重新读取');
+
+    if (error === 'NO_CHATGPT_TAB') {
+      renderBatchConversations([]);
+      setBatchStatus('未找到 ChatGPT 页面', 'error');
+      return;
+    }
+
+    if (error) {
+      setBatchStatus('读取失败，请重试', 'error');
+      return;
+    }
+
+    if (response && response.status === 'success') {
+      var items = response.detail && Array.isArray(response.detail.items)
+        ? response.detail.items
+        : [];
+      renderBatchConversations(items);
+      return;
+    }
+
+    renderBatchConversations([]);
+    setBatchStatus('读取失败，请重试', 'error');
+  });
+}
+
+function startBatchExport() {
+  if (selectedBatchItems.size === 0) {
+    return;
+  }
+
+  var items = Array.from(selectedBatchItems.values());
+  setButtonLoading(startBatchExportBtn, true, '启动中...', '导出已选');
+  setBatchStatus('', '');
+
+  sendToActiveChatGPTTab({
+    action: 'startBatchExport',
+    items: items
+  }, function (response, error) {
+    if (error) {
+      setBatchStatus('启动失败，请重试', 'error');
+      setButtonLoading(startBatchExportBtn, false, '', '导出已选');
+      return;
+    }
+
+    if (response && response.status === 'success') {
+      window.close();
+      return;
+    }
+
+    setBatchStatus('启动失败，请重试', 'error');
+    setButtonLoading(startBatchExportBtn, false, '', '导出已选');
+  });
+}
+
 function enterBatchMode() {
-  setStatus('此功能开发中，即将上线', 'success');
+  mainView.hidden = true;
+  batchPanel.hidden = false;
+  document.body.classList.add('batch-mode');
+  loadBatchConversations();
+}
+
+function exitBatchMode() {
+  mainView.hidden = false;
+  batchPanel.hidden = true;
+  document.body.classList.remove('batch-mode');
+  setBatchStatus('', '');
 }
 
 fullExportBtn.addEventListener('click', exportCurrentConversation);
 selectExportBtn.addEventListener('click', enterSelectionMode);
 batchExportBtn.addEventListener('click', enterBatchMode);
+if (startBatchExportBtn && reloadListBtn && backBtn) {
+  startBatchExportBtn.addEventListener('click', startBatchExport);
+  reloadListBtn.addEventListener('click', loadBatchConversations);
+  backBtn.addEventListener('click', exitBatchMode);
+}
 
 settingsLink.addEventListener('click', function (event) {
   event.preventDefault();

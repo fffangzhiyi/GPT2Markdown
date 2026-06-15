@@ -2,6 +2,10 @@
   box-sizing: border-box;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 body {
   width: 260px;
   margin: 0;
@@ -9,6 +13,10 @@ body {
   font-family: system-ui, -apple-system, sans-serif;
   background: #fff;
   color: #000;
+}
+
+body.batch-mode {
+  width: 380px;
 }
 
 .title {
@@ -131,4 +139,126 @@ body {
 
 #settings-link:hover {
   opacity: 0.7;
+}
+
+.batch-header,
+.batch-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.batch-header .title {
+  margin-bottom: 0;
+}
+
+.batch-warning {
+  margin: 10px 0 8px;
+  color: #777;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.batch-list-shell {
+  position: relative;
+  height: 360px;
+}
+
+.batch-list {
+  height: 100%;
+  overflow-y: auto;
+  border: 1px solid #dedede;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.batch-group + .batch-group {
+  border-top: 1px solid #ededed;
+}
+
+.batch-group-title {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 8px 10px 5px;
+  background: #f7f7f7;
+  color: #777;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.batch-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 7px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.batch-item:hover {
+  background: #f5f5f5;
+}
+
+.batch-item input {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  accent-color: #000;
+  cursor: pointer;
+}
+
+.batch-item-title {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.batch-empty {
+  position: absolute;
+  inset: 1px;
+  margin: 0;
+  padding: 136px 24px 0;
+  border-radius: 9px;
+  background: #fff;
+  color: #888;
+  font-size: 12px;
+  line-height: 1.5;
+  text-align: center;
+  pointer-events: none;
+}
+
+.batch-toolbar {
+  min-height: 32px;
+  color: #666;
+  font-size: 12px;
+}
+
+.text-btn {
+  padding: 3px 0;
+  border: 0;
+  background: transparent;
+  color: #555;
+  font-family: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.text-btn:hover {
+  color: #000;
+  text-decoration: underline;
+}
+
+.batch-status {
+  min-height: 16px;
+  margin: 8px 0 0;
+  color: #666;
+  font-size: 12px;
+  text-align: center;
+}
+
+.batch-status.error {
+  color: #d14343;
 }

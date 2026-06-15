@@ -7,7 +7,7 @@ const STATUS_ACTION = 'getExportStatus';
 const DEFAULT_FOLDER_NAME = 'chatgpt-inbox';
 const DEFAULT_SAVE_MODE = 'auto';
 
-let pendingAskFilename = null;
+const pendingDownloadFilenames = [];
 
 function isChatGPTTab(tab) {
   return Boolean(tab && tab.url && tab.url.includes(CHATGPT_URL_PART));
@@ -88,10 +88,15 @@ function createMarkdownDataUrl(markdown) {
 }
 
 chrome.downloads.onDeterminingFilename.addListener((downloadItem, suggest) => {
-  if (pendingAskFilename && downloadItem.url.startsWith('data:text/markdown')) {
-    const filename = pendingAskFilename;
-    pendingAskFilename = null;
-    suggest({ filename, conflictAction: 'uniquify' });
+  if (
+    downloadItem.url.startsWith('data:text/markdown')
+    && pendingDownloadFilenames.length > 0
+  ) {
+    const pendingDownload = pendingDownloadFilenames.shift();
+    suggest({
+      filename: pendingDownload.filename,
+      conflictAction: 'uniquify'
+    });
     return;
   }
   suggest();
@@ -118,23 +123,32 @@ async function processExportResponse(response, folderName) {
   }
 
   const saveMode = await getSaveMode();
+  const targetFilename = saveMode === 'auto'
+    ? folderName + '/' + response.detail.filename
+    : response.detail.filename;
+  const pendingDownload = {
+    filename: targetFilename
+  };
+  pendingDownloadFilenames.push(pendingDownload);
 
   try {
     if (saveMode === 'auto') {
       await chrome.downloads.download({
         url: createMarkdownDataUrl(response.detail.markdown),
-        filename: folderName + '/' + response.detail.filename,
+        filename: targetFilename,
         saveAs: false
       });
     } else {
-      pendingAskFilename = response.detail.filename;
       await chrome.downloads.download({
         url: createMarkdownDataUrl(response.detail.markdown),
         saveAs: true
       });
     }
   } catch (error) {
-    pendingAskFilename = null;
+    const pendingIndex = pendingDownloadFilenames.indexOf(pendingDownload);
+    if (pendingIndex !== -1) {
+      pendingDownloadFilenames.splice(pendingIndex, 1);
+    }
     return {
       action: 'exportResult',
       status: 'error',
@@ -292,7 +306,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
-  if (message.action === 'enterBatchMode') {
+  if (message.action === 'getBatchConversations') {
     (async () => {
       const tab = await getActiveTab();
       if (!isChatGPTTab(tab)) {
@@ -305,12 +319,40 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         return;
       }
       try {
-        await chrome.tabs.sendMessage(tab.id, {
-          action: 'enterBatchMode'
+        const response = await chrome.tabs.sendMessage(tab.id, {
+          action: 'getBatchConversations'
         });
+        sendResponse(response);
+      } catch (error) {
         sendResponse({
-          status: 'success'
+          status: 'error',
+          detail: {
+            error: 'CONTENT_SCRIPT_NOT_READY'
+          }
         });
+      }
+    })();
+    return true;
+  }
+
+  if (message.action === 'startBatchExport') {
+    (async () => {
+      const tab = await getActiveTab();
+      if (!isChatGPTTab(tab)) {
+        sendResponse({
+          status: 'error',
+          detail: {
+            error: 'NOT_ON_CHATGPT_PAGE'
+          }
+        });
+        return;
+      }
+      try {
+        const response = await chrome.tabs.sendMessage(tab.id, {
+          action: 'startBatchExport',
+          items: Array.isArray(message.items) ? message.items : []
+        });
+        sendResponse(response);
       } catch (error) {
         sendResponse({
           status: 'error',
@@ -340,6 +382,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   if (message.action === 'processSelectionExportResult') {
+    (async () => {
+      const folderName = await getFolderName();
+      const response = await processExportResponse(message.response, folderName);
+      sendResponse(response);
+    })();
+    return true;
+  }
+
+  if (message.action === 'processBatchExportResult') {
     (async () => {
       const folderName = await getFolderName();
       const response = await processExportResponse(message.response, folderName);

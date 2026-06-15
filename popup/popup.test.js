@@ -4,14 +4,20 @@ const assert = require('node:assert');
 const fs = require('node:fs');
 const vm = require('node:vm');
 
-function createElement(id) {
-  return {
+function createElement(id, tagName = 'div') {
+  const element = {
     id,
+    tagName: tagName.toUpperCase(),
     textContent: '',
     href: '',
     disabled: false,
     hidden: true,
     className: '',
+    checked: false,
+    type: '',
+    dataset: {},
+    children: [],
+    parentNode: null,
     classList: {
       values: new Set(),
       add(value) {
@@ -25,6 +31,17 @@ function createElement(id) {
       }
     },
     listeners: {},
+    appendChild(child) {
+      child.parentNode = this;
+      this.children.push(child);
+      return child;
+    },
+    replaceChildren() {
+      this.children = Array.from(arguments);
+      for (const child of this.children) {
+        child.parentNode = this;
+      }
+    },
     addEventListener(type, listener) {
       this.listeners[type] = listener;
     },
@@ -36,36 +53,73 @@ function createElement(id) {
       }
     }
   };
+  return element;
+}
+
+function descendants(element) {
+  const result = [];
+  for (const child of element.children) {
+    result.push(child);
+    result.push(...descendants(child));
+  }
+  return result;
 }
 
 function createContext(responses = {}) {
   const elements = {
-    'export-btn': createElement('export-btn'),
-    'full-export-btn': createElement('full-export-btn'),
-    'select-export-btn': createElement('select-export-btn'),
-    'batch-export-btn': createElement('batch-export-btn'),
+    'main-view': createElement('main-view'),
+    'export-btn': createElement('export-btn', 'button'),
+    'full-export-btn': createElement('full-export-btn', 'button'),
+    'select-export-btn': createElement('select-export-btn', 'button'),
+    'batch-export-btn': createElement('batch-export-btn', 'button'),
     'conversation-actions': createElement('conversation-actions'),
     'history-actions': createElement('history-actions'),
     'other-message': createElement('other-message'),
     'voice-warning': createElement('voice-warning'),
     status: createElement('status'),
     'last-export': createElement('last-export'),
-    'settings-link': createElement('settings-link')
+    'settings-link': createElement('settings-link'),
+    'batch-panel': createElement('batch-panel'),
+    'batch-list': createElement('batch-list'),
+    'batch-empty': createElement('batch-empty'),
+    'batch-selected-count': createElement('batch-selected-count'),
+    'start-batch-export-btn': createElement('start-batch-export-btn', 'button'),
+    'reload-list-btn': createElement('reload-list-btn', 'button'),
+    'back-btn': createElement('back-btn', 'button'),
+    'batch-status': createElement('batch-status')
   };
+  elements['main-view'].hidden = false;
+  elements['batch-panel'].hidden = true;
+  elements['batch-empty'].hidden = true;
   elements['export-btn'].textContent = '导出当前对话';
   elements['full-export-btn'].textContent = '全量导出';
   elements['select-export-btn'].textContent = '选择导出';
   elements['batch-export-btn'].textContent = '批量导出';
+  elements['batch-selected-count'].textContent = '已选择 0 条';
+  elements['start-batch-export-btn'].textContent = '导出已选';
+  elements['start-batch-export-btn'].disabled = true;
+  elements['reload-list-btn'].textContent = '重新读取';
+  elements['back-btn'].textContent = '返回';
 
   const sentMessages = [];
+  const tabQueries = [];
+  const tabMessages = [];
   const openedOptionsPages = [];
   const closedWindows = [];
+  const createdWindows = [];
+  const body = createElement('body', 'body');
   const context = {
     console,
     Date,
+    Map,
+    Array,
     document: {
+      body,
       getElementById(id) {
         return elements[id];
+      },
+      createElement(tagName) {
+        return createElement('', tagName);
       }
     },
     chrome: {
@@ -85,6 +139,36 @@ function createContext(responses = {}) {
         openOptionsPage() {
           openedOptionsPages.push(true);
         }
+      },
+      tabs: {
+        query(queryInfo, callback) {
+          tabQueries.push(queryInfo);
+          callback(responses.tabs || [
+            {
+              id: 123,
+              url: 'https://chatgpt.com/'
+            }
+          ]);
+        },
+        sendMessage(tabId, message, callback) {
+          tabMessages.push({
+            tabId,
+            message
+          });
+          const response = responses[message.action];
+          if (typeof response === 'function') {
+            response(callback);
+            return;
+          }
+          if (callback) {
+            callback(response);
+          }
+        }
+      },
+      windows: {
+        create(options) {
+          createdWindows.push(options);
+        }
       }
     },
     window: {
@@ -93,9 +177,13 @@ function createContext(responses = {}) {
       }
     },
     elements,
+    body,
     sentMessages,
+    tabQueries,
+    tabMessages,
     openedOptionsPages,
-    closedWindows
+    closedWindows,
+    createdWindows
   };
 
   context.globalThis = context;
@@ -327,7 +415,7 @@ async function test(name, fn) {
     loadPopup(context);
 
     assert.strictEqual(context.elements['conversation-actions'].hidden, false);
-    assert.strictEqual(context.elements['history-actions'].hidden, true);
+    assert.strictEqual(context.elements['history-actions'].hidden, false);
     assert.strictEqual(context.elements['other-message'].hidden, true);
   });
 
@@ -386,8 +474,217 @@ async function test(name, fn) {
     assert.strictEqual(context.closedWindows.length, 1);
   });
 
-  await test('batch button shows development status without messaging or closing', () => {
+  await test('popup contains an inline batch selection view', () => {
+    const html = fs.readFileSync('popup/popup.html', 'utf8');
+    const css = fs.readFileSync('popup/popup.css', 'utf8');
+
+    assert.ok(html.includes('id="main-view"'));
+    assert.ok(html.includes('id="batch-panel"'));
+    assert.ok(html.includes('id="batch-list"'));
+    assert.ok(html.includes('id="start-batch-export-btn"'));
+    assert.ok(html.includes('id="back-btn"'));
+    assert.ok(!html.includes('batch.html'));
+    assert.ok(css.includes('body.batch-mode'));
+    assert.ok(css.includes('width: 380px'));
+    assert.ok(css.includes('height: 360px'));
+    assert.strictEqual(fs.existsSync('popup/batch.html'), false);
+    assert.strictEqual(fs.existsSync('popup/batch.js'), false);
+  });
+
+  await test('batch button switches the current popup to a larger batch view', () => {
     const context = createContext({
+      getExportStatus: {
+        lastExportTime: null,
+        lastExportFilename: '',
+        pageContext: 'history'
+      },
+      getBatchConversations: {
+        status: 'success',
+        detail: {
+          items: []
+        }
+      }
+    });
+
+    loadPopup(context);
+    context.elements['batch-export-btn'].click();
+
+    assert.strictEqual(context.elements['main-view'].hidden, true);
+    assert.strictEqual(context.elements['batch-panel'].hidden, false);
+    assert.strictEqual(context.body.classList.contains('batch-mode'), true);
+    assertJsonEqual(context.tabQueries, [
+      {
+        active: true,
+        url: 'https://chatgpt.com/*'
+      }
+    ]);
+    assertJsonEqual(context.tabMessages, [
+      {
+        tabId: 123,
+        message: {
+          action: 'getBatchConversations'
+        }
+      }
+    ]);
+    assert.strictEqual(context.createdWindows.length, 0);
+    assert.strictEqual(context.closedWindows.length, 0);
+  });
+
+  await test('batch view renders unchecked conversations grouped by project', () => {
+    const context = createContext({
+      getExportStatus: {
+        lastExportTime: null,
+        lastExportFilename: '',
+        pageContext: 'history'
+      },
+      getBatchConversations: {
+        status: 'success',
+        detail: {
+          items: [
+            {
+              id: 'project-chat',
+              title: 'Project Chat',
+              projectKey: 'g-p-vibecoding',
+              projectTitle: 'VibeCoding'
+            },
+            {
+              id: 'regular-chat',
+              title: 'Regular Chat',
+              projectKey: '',
+              projectTitle: '未分组对话'
+            }
+          ]
+        }
+      }
+    });
+
+    loadPopup(context);
+    context.elements['batch-export-btn'].click();
+
+    const groups = context.elements['batch-list'].children;
+    assert.strictEqual(groups.length, 2);
+    assert.strictEqual(groups[0].children[0].textContent, 'VibeCoding');
+    assert.strictEqual(groups[1].children[0].textContent, '未分组对话');
+
+    const inputs = descendants(context.elements['batch-list'])
+      .filter((element) => element.tagName === 'INPUT');
+    assert.strictEqual(inputs.length, 2);
+    assert.strictEqual(inputs[0].checked, false);
+    assert.strictEqual(inputs[1].checked, false);
+    assert.strictEqual(context.elements['start-batch-export-btn'].disabled, true);
+  });
+
+  await test('batch view exports only checked conversations', () => {
+    const context = createContext({
+      getExportStatus: {
+        lastExportTime: null,
+        lastExportFilename: '',
+        pageContext: 'history'
+      },
+      getBatchConversations: {
+        status: 'success',
+        detail: {
+          items: [
+            {
+              id: 'conversation-1',
+              title: 'First Chat',
+              projectKey: '',
+              projectTitle: '未分组对话'
+            },
+            {
+              id: 'conversation-2',
+              title: 'Second Chat',
+              projectKey: '',
+              projectTitle: '未分组对话'
+            }
+          ]
+        }
+      },
+      startBatchExport: {
+        status: 'success'
+      }
+    });
+
+    loadPopup(context);
+    context.elements['batch-export-btn'].click();
+
+    const inputs = descendants(context.elements['batch-list'])
+      .filter((element) => element.tagName === 'INPUT');
+    inputs[1].checked = true;
+    inputs[1].listeners.change.call(inputs[1]);
+    context.elements['start-batch-export-btn'].click();
+
+    assertJsonEqual(context.tabMessages[1], {
+      tabId: 123,
+      message: {
+        action: 'startBatchExport',
+        items: [
+          {
+            id: 'conversation-2',
+            title: 'Second Chat'
+          }
+        ]
+      }
+    });
+    assert.strictEqual(context.closedWindows.length, 1);
+  });
+
+  await test('back button restores the compact popup view', () => {
+    const context = createContext({
+      getExportStatus: {
+        lastExportTime: null,
+        lastExportFilename: '',
+        pageContext: 'history'
+      },
+      getBatchConversations: {
+        status: 'success',
+        detail: {
+          items: []
+        }
+      }
+    });
+
+    loadPopup(context);
+    context.elements['batch-export-btn'].click();
+    context.elements['back-btn'].click();
+
+    assert.strictEqual(context.elements['main-view'].hidden, false);
+    assert.strictEqual(context.elements['batch-panel'].hidden, true);
+    assert.strictEqual(context.body.classList.contains('batch-mode'), false);
+    assert.strictEqual(context.closedWindows.length, 0);
+  });
+
+  await test('empty batch view can reload the DOM conversation list', () => {
+    const context = createContext({
+      getExportStatus: {
+        lastExportTime: null,
+        lastExportFilename: '',
+        pageContext: 'history'
+      },
+      getBatchConversations: {
+        status: 'success',
+        detail: {
+          items: []
+        }
+      }
+    });
+
+    loadPopup(context);
+    context.elements['batch-export-btn'].click();
+
+    assert.strictEqual(context.elements['batch-empty'].hidden, false);
+    assert.strictEqual(
+      context.elements['batch-empty'].textContent,
+      '未读取到对话，请先完全展开 ChatGPT 对话列表后重新读取。'
+    );
+
+    context.elements['reload-list-btn'].click();
+    assert.strictEqual(context.tabMessages.length, 2);
+  });
+
+  await test('batch view shows an error when no active ChatGPT tab is available', () => {
+    const context = createContext({
+      tabs: [],
       getExportStatus: {
         lastExportTime: null,
         lastExportFilename: '',
@@ -398,13 +695,23 @@ async function test(name, fn) {
     loadPopup(context);
     context.elements['batch-export-btn'].click();
 
-    assertJsonEqual(context.sentMessages, [
-      {
-        action: 'getExportStatus'
+    assert.strictEqual(context.tabMessages.length, 0);
+    assert.strictEqual(context.elements['batch-status'].textContent, '未找到 ChatGPT 页面');
+    assert.strictEqual(context.elements['batch-status'].className, 'batch-status error');
+  });
+
+  await test('popup initializes when optional batch controls are absent', () => {
+    const context = createContext({
+      getExportStatus: {
+        lastExportTime: null,
+        lastExportFilename: '',
+        pageContext: 'conversation'
       }
-    ]);
-    assert.strictEqual(context.closedWindows.length, 0);
-    assert.strictEqual(context.elements.status.textContent, '此功能开发中，即将上线');
-    assert.strictEqual(context.elements.status.className, 'status success');
+    });
+    delete context.elements['start-batch-export-btn'];
+    delete context.elements['reload-list-btn'];
+    delete context.elements['back-btn'];
+
+    assert.doesNotThrow(() => loadPopup(context));
   });
 })();

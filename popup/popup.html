@@ -6,23 +6,45 @@
 </head>
 <body>
   <div class="container">
-    <h1 class="title">ChatGPT → Markdown</h1>
-    <div id="conversation-actions" class="actions-section" hidden>
-      <button id="full-export-btn" class="export-btn">全量导出</button>
-      <button id="select-export-btn" class="export-btn secondary-btn">选择导出</button>
+    <div id="main-view">
+      <h1 class="title">ChatGPT → Markdown</h1>
+      <div id="conversation-actions" class="actions-section" hidden>
+        <button id="full-export-btn" class="export-btn">全量导出</button>
+        <button id="select-export-btn" class="export-btn secondary-btn">选择导出</button>
+      </div>
+      <div id="history-actions" class="actions-section" hidden>
+        <button id="batch-export-btn" class="export-btn">批量导出</button>
+      </div>
+      <div id="other-message" class="actions-section" hidden>
+        <p class="other-hint">请在 ChatGPT 页面使用</p>
+      </div>
+      <p id="voice-warning" class="voice-warning"></p>
+      <p id="status" class="status"></p>
+      <p class="footer">
+        <span id="last-export"></span>
+        <a id="settings-link" href="#"><span class="settings-icon">&#9881;</span> 设置</a>
+      </p>
     </div>
-    <div id="history-actions" class="actions-section" hidden>
-      <button id="batch-export-btn" class="export-btn">批量导出</button>
-    </div>
-    <div id="other-message" class="actions-section" hidden>
-      <p class="other-hint">请在 ChatGPT 页面使用</p>
-    </div>
-    <p id="voice-warning" class="voice-warning"></p>
-    <p id="status" class="status"></p>
-    <p class="footer">
-      <span id="last-export"></span>
-      <a id="settings-link" href="#"><span class="settings-icon">&#9881;</span> 设置</a>
-    </p>
+
+    <section id="batch-panel" class="batch-panel" hidden>
+      <div class="batch-header">
+        <h1 class="title">批量导出</h1>
+        <button id="back-btn" class="text-btn">返回</button>
+      </div>
+      <p class="batch-warning">
+        对话列表可能不完整，请先在 ChatGPT 页面完全展开对话列表。
+      </p>
+      <div class="batch-list-shell">
+        <div id="batch-list" class="batch-list"></div>
+        <p id="batch-empty" class="batch-empty" hidden></p>
+      </div>
+      <div class="batch-toolbar">
+        <span id="batch-selected-count">已选择 0 条</span>
+        <button id="reload-list-btn" class="text-btn">重新读取</button>
+      </div>
+      <button id="start-batch-export-btn" class="export-btn" disabled>导出已选</button>
+      <p id="batch-status" class="batch-status"></p>
+    </section>
   </div>
   <script src="popup.js"></script>
 </body>

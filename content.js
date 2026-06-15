@@ -5,10 +5,13 @@
   const RESULT_TYPE = 'GPT2MD_EXPORT_RESULT';
   const SELECTION_ENTER_TYPE = 'GPT2MD_ENTER_SELECTION';
   const SELECTION_EXIT_TYPE = 'GPT2MD_EXIT_SELECTION';
-  const BATCH_ENTER_TYPE = 'GPT2MD_ENTER_BATCH';
+  const BATCH_LIST_REQUEST_TYPE = 'GPT2MD_GET_BATCH_CONVERSATIONS';
+  const BATCH_LIST_RESULT_TYPE = 'GPT2MD_BATCH_CONVERSATIONS_RESULT';
+  const BATCH_START_TYPE = 'GPT2MD_START_BATCH_EXPORT';
   const PREFETCH_TYPE = 'GPT2MD_PREFETCH';
   const DEFAULT_FOLDER_NAME = 'chatgpt-inbox';
   const EXPORT_TIMEOUT_MS = 15000;
+  let batchRequestCounter = 0;
 
   function requestMainWorldExport(folderName) {
     return new Promise((resolve) => {
@@ -43,6 +46,45 @@
     });
   }
 
+  function requestBatchConversations() {
+    return new Promise((resolve) => {
+      batchRequestCounter += 1;
+      const requestId = 'batch-' + Date.now() + '-' + batchRequestCounter;
+      const timeoutId = globalScope.setTimeout(() => {
+        globalScope.window.removeEventListener('message', handleMessage);
+        resolve({
+          status: 'error',
+          detail: {
+            error: 'TIMEOUT'
+          }
+        });
+      }, EXPORT_TIMEOUT_MS);
+
+      function handleMessage(event) {
+        if (
+          !event.data
+          || event.data.type !== BATCH_LIST_RESULT_TYPE
+          || event.data.requestId !== requestId
+        ) {
+          return;
+        }
+
+        globalScope.clearTimeout(timeoutId);
+        globalScope.window.removeEventListener('message', handleMessage);
+        resolve({
+          status: event.data.status,
+          detail: event.data.detail
+        });
+      }
+
+      globalScope.window.addEventListener('message', handleMessage);
+      globalScope.window.postMessage({
+        type: BATCH_LIST_REQUEST_TYPE,
+        requestId
+      }, '*');
+    });
+  }
+
   globalScope.window.addEventListener('message', (event) => {
     if (
       !event.data
@@ -58,6 +100,27 @@
         action: 'exportResult',
         status: event.data.status,
         detail: event.data.detail
+      }
+    });
+  });
+
+  globalScope.window.addEventListener('message', (event) => {
+    if (
+      !event.data
+      || event.data.type !== RESULT_TYPE
+      || event.data.batchExport !== true
+    ) {
+      return;
+    }
+
+    globalScope.chrome.runtime.sendMessage({
+      action: 'processBatchExportResult',
+      response: {
+        action: 'exportResult',
+        status: event.data.status,
+        detail: event.data.detail,
+        batchExport: true,
+        batchSummary: Boolean(event.data.batchSummary)
       }
     });
   });
@@ -87,9 +150,17 @@
       return false;
     }
 
-    if (message.action === 'enterBatchMode') {
+    if (message.action === 'getBatchConversations') {
+      requestBatchConversations().then((result) => {
+        sendResponse(result);
+      });
+      return true;
+    }
+
+    if (message.action === 'startBatchExport') {
       globalScope.window.postMessage({
-        type: BATCH_ENTER_TYPE
+        type: BATCH_START_TYPE,
+        items: Array.isArray(message.items) ? message.items : []
       }, '*');
       sendResponse({
         status: 'success'

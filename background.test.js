@@ -11,6 +11,7 @@ function createContext(overrides = {}) {
   const sentMessages = [];
   const downloads = [];
   const filenameSuggestions = [];
+  const resolvedDownloadFilenames = [];
   const badgeTexts = [];
   const badgeColors = [];
   const markdownDataUrl = 'data:text/markdown;charset=utf-8,%23%20Title%0A';
@@ -74,6 +75,7 @@ function createContext(overrides = {}) {
         },
         download: async (payload) => {
           downloads.push(payload);
+          let resolvedFilename = 'download.md';
           for (const listener of determiningFilenameListeners) {
             listener({
               id: 456,
@@ -81,8 +83,12 @@ function createContext(overrides = {}) {
               filename: 'download.md'
             }, (suggestion) => {
               filenameSuggestions.push(suggestion || null);
+              if (suggestion && suggestion.filename) {
+                resolvedFilename = suggestion.filename;
+              }
             });
           }
+          resolvedDownloadFilenames.push(resolvedFilename);
           return 456;
         }
       },
@@ -138,6 +144,7 @@ function createContext(overrides = {}) {
     sentMessages,
     downloads,
     filenameSuggestions,
+    resolvedDownloadFilenames,
     markdownDataUrl,
     badgeTexts,
     badgeColors,
@@ -200,6 +207,10 @@ async function test(name, fn) {
       filename: 'custom-folder/2026-06-02-Title.md',
       saveAs: false
     });
+    assert.strictEqual(
+      context.resolvedDownloadFilenames[0],
+      'custom-folder/2026-06-02-Title.md'
+    );
     assertJsonEqual(context.storageState.exportHistory, [
       {
         timestamp: 1780000000000,
@@ -227,6 +238,10 @@ async function test(name, fn) {
       filename: '2026-06-02-Title.md',
       conflictAction: 'uniquify'
     });
+    assert.strictEqual(
+      context.resolvedDownloadFilenames[0],
+      '2026-06-02-Title.md'
+    );
     assertJsonEqual(context.storageState.exportHistory, [
       {
         timestamp: 1780000000000,
@@ -503,18 +518,87 @@ async function test(name, fn) {
     });
   });
 
-  await test('enterBatchMode forwards on ChatGPT and reports messaging failures', async () => {
+  await test('getBatchConversations returns the active ChatGPT tab DOM list', async () => {
     const context = createContext();
+    context.chrome.tabs.sendMessage = async (tabId, message) => {
+      context.sentMessages.push({
+        tabId,
+        message
+      });
+      return {
+        status: 'success',
+        detail: {
+          items: [
+            {
+              id: 'conversation-1',
+              title: 'First Chat',
+              projectKey: '',
+              projectTitle: '未分组对话'
+            }
+          ]
+        }
+      };
+    };
     loadBackground(context);
 
-    const success = await sendRuntimeMessage(context, {
-      action: 'enterBatchMode'
+    const result = await sendRuntimeMessage(context, {
+      action: 'getBatchConversations'
     });
 
     assertJsonEqual(context.sentMessages[0], {
       tabId: 123,
       message: {
-        action: 'enterBatchMode'
+        action: 'getBatchConversations'
+      }
+    });
+    assertJsonEqual(result.response, {
+      status: 'success',
+      detail: {
+        items: [
+          {
+            id: 'conversation-1',
+            title: 'First Chat',
+            projectKey: '',
+            projectTitle: '未分组对话'
+          }
+        ]
+      }
+    });
+  });
+
+  await test('startBatchExport forwards selected items and reports messaging failures', async () => {
+    const context = createContext();
+    context.chrome.tabs.sendMessage = async (tabId, message) => {
+      context.sentMessages.push({
+        tabId,
+        message
+      });
+      return {
+        status: 'success'
+      };
+    };
+    loadBackground(context);
+
+    const success = await sendRuntimeMessage(context, {
+      action: 'startBatchExport',
+      items: [
+        {
+          id: 'conversation-2',
+          title: 'Second Chat'
+        }
+      ]
+    });
+
+    assertJsonEqual(context.sentMessages[0], {
+      tabId: 123,
+      message: {
+        action: 'startBatchExport',
+        items: [
+          {
+            id: 'conversation-2',
+            title: 'Second Chat'
+          }
+        ]
       }
     });
     assertJsonEqual(success.response, {
@@ -525,7 +609,8 @@ async function test(name, fn) {
       throw new Error('not ready');
     };
     const failure = await sendRuntimeMessage(context, {
-      action: 'enterBatchMode'
+      action: 'startBatchExport',
+      items: []
     });
 
     assertJsonEqual(failure.response, {
@@ -559,12 +644,55 @@ async function test(name, fn) {
       filename: 'custom-folder/Selected.md',
       saveAs: false
     });
+    assert.strictEqual(
+      context.resolvedDownloadFilenames[0],
+      'custom-folder/Selected.md'
+    );
     assertJsonEqual(result.response, {
       action: 'exportResult',
       status: 'success',
       detail: {
         filename: 'Selected.md',
         title: 'Selected'
+      }
+    });
+  });
+
+  await test('processBatchExportResult downloads each batch markdown item', async () => {
+    const context = createContext();
+    loadBackground(context);
+
+    const result = await sendRuntimeMessage(context, {
+      action: 'processBatchExportResult',
+      response: {
+        action: 'exportResult',
+        status: 'success',
+        detail: {
+          filename: 'Batch.md',
+          title: 'Batch',
+          markdown: '# Batch\n'
+        },
+        batchExport: true,
+        batchSummary: false
+      }
+    });
+
+    assert.strictEqual(result.keepAlive, true);
+    assertJsonEqual(context.downloads[0], {
+      url: 'data:text/markdown;charset=utf-8,%23%20Batch%0A',
+      filename: 'custom-folder/Batch.md',
+      saveAs: false
+    });
+    assert.strictEqual(
+      context.resolvedDownloadFilenames[0],
+      'custom-folder/Batch.md'
+    );
+    assertJsonEqual(result.response, {
+      action: 'exportResult',
+      status: 'success',
+      detail: {
+        filename: 'Batch.md',
+        title: 'Batch'
       }
     });
   });
@@ -591,6 +719,10 @@ async function test(name, fn) {
       filename: 'custom-folder/2026-06-02-Title.md',
       saveAs: false
     });
+    assert.strictEqual(
+      context.resolvedDownloadFilenames[0],
+      'custom-folder/2026-06-02-Title.md'
+    );
     assert.strictEqual(context.storageState.exportHistory.length, 1);
   });
 

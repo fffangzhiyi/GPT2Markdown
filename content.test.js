@@ -211,17 +211,75 @@ async function test(name, fn) {
     });
   });
 
-  await test('forwards enterBatchMode to the MAIN world', () => {
+  await test('requests DOM batch conversations from the MAIN world', async () => {
     const context = createContext();
     loadContent(context);
 
     const runtime = sendRuntimeMessage(context, {
-      action: 'enterBatchMode'
+      action: 'getBatchConversations'
+    });
+
+    assert.strictEqual(runtime.keepAlive, true);
+    assert.strictEqual(
+      context.postedMessages[0].type,
+      'GPT2MD_GET_BATCH_CONVERSATIONS'
+    );
+    assert.ok(context.postedMessages[0].requestId);
+
+    await dispatchWindowMessage(context, {
+      type: 'GPT2MD_BATCH_CONVERSATIONS_RESULT',
+      requestId: context.postedMessages[0].requestId,
+      status: 'success',
+      detail: {
+        items: [
+          {
+            id: 'conversation-1',
+            title: 'First Chat',
+            projectKey: '',
+            projectTitle: '未分组对话'
+          }
+        ]
+      }
+    });
+
+    assertJsonEqual(runtime.getResponse(), {
+      status: 'success',
+      detail: {
+        items: [
+          {
+            id: 'conversation-1',
+            title: 'First Chat',
+            projectKey: '',
+            projectTitle: '未分组对话'
+          }
+        ]
+      }
+    });
+  });
+
+  await test('forwards selected batch conversations to the MAIN world', () => {
+    const context = createContext();
+    loadContent(context);
+
+    const runtime = sendRuntimeMessage(context, {
+      action: 'startBatchExport',
+      items: [
+        {
+          id: 'conversation-2',
+          title: 'Second Chat'
+        }
+      ]
     });
 
     assert.strictEqual(runtime.keepAlive, false);
     assertJsonEqual(context.postedMessages[0], {
-      type: 'GPT2MD_ENTER_BATCH'
+      type: 'GPT2MD_START_BATCH_EXPORT',
+      items: [
+        {
+          id: 'conversation-2',
+          title: 'Second Chat'
+        }
+      ]
     });
     assertJsonEqual(runtime.getResponse(), {
       status: 'success'
@@ -269,6 +327,38 @@ async function test(name, fn) {
           markdown: '# Selected\n',
           selectedCount: 1
         }
+      }
+    });
+  });
+
+  await test('relays batch export items and summaries to the background pipeline', async () => {
+    const context = createContext();
+    loadContent(context);
+
+    await dispatchWindowMessage(context, {
+      type: 'GPT2MD_EXPORT_RESULT',
+      batchExport: true,
+      batchSummary: true,
+      status: 'success',
+      detail: {
+        successCount: 2,
+        failedCount: 0,
+        failedItems: []
+      }
+    });
+
+    assertJsonEqual(context.runtimeMessages[0], {
+      action: 'processBatchExportResult',
+      response: {
+        action: 'exportResult',
+        status: 'success',
+        detail: {
+          successCount: 2,
+          failedCount: 0,
+          failedItems: []
+        },
+        batchExport: true,
+        batchSummary: true
       }
     });
   });
