@@ -8,14 +8,14 @@ body {
   padding: 40px 16px;
   display: flex;
   justify-content: center;
-  background: #fff;
-  color: #000;
+  background: #fbfbfa;
+  color: #050505;
   font-family: system-ui, -apple-system, sans-serif;
 }
 
 .settings-page {
   width: 100%;
-  max-width: 480px;
+  max-width: 620px;
 }
 
 .page-header {
@@ -24,93 +24,117 @@ body {
 
 .page-header h1 {
   margin: 0;
-  font-size: 20px;
-  font-weight: 600;
+  font-size: 22px;
+  line-height: 1.18;
+  font-weight: 780;
+  letter-spacing: 0;
 }
 
 .page-header p {
-  margin: 4px 0 0;
-  font-size: 13px;
+  margin: 8px 0 0;
+  font-size: 14px;
+  line-height: 1.45;
   font-weight: 400;
-  opacity: 0.55;
+  color: #757575;
+  opacity: 1;
 }
 
 .settings-card {
-  margin: 0 0 12px;
+  margin: 0 0 16px;
   padding: 20px;
   background: #fff;
-  border: 1px solid #e6e6e6;
-  border-radius: 8px;
+  border: 1px solid #ececec;
+  border-radius: 12px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
 }
 
 .settings-card h2 {
-  margin: 0 0 14px;
-  font-size: 14px;
-  font-weight: 600;
+  margin: 0 0 16px;
+  font-size: 16px;
+  line-height: 1.25;
+  font-weight: 760;
 }
 
 /* Save mode cards */
 
 .save-mode-group {
-  margin: 0 0 14px;
+  margin: 0;
   padding: 0;
   border: none;
 }
 
 .save-mode-legend {
-  margin-bottom: 8px;
+  margin-bottom: 10px;
   padding: 0;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 560;
 }
 
 .mode-card {
-  padding: 10px 12px;
-  border: 1px solid #e6e6e6;
-  border-radius: 8px;
+  position: relative;
+  min-height: 64px;
+  padding: 12px 14px 12px 48px;
+  border: 1px solid #e1e1e1;
+  border-radius: 10px;
   cursor: pointer;
-  transition: background 120ms ease, border-color 120ms ease;
+  transition: background 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  justify-content: center;
+  gap: 10px;
 }
 
 .mode-card:first-of-type {
-  margin-bottom: 6px;
+  margin-bottom: 10px;
 }
 
 .mode-card:hover {
-  border-color: #ccc;
+  border-color: #b8d2ff;
 }
 
 .mode-card[aria-checked="true"] {
-  background: #000;
-  border-color: #000;
+  background: #f7fbff;
+  border-color: #2d83ff;
+  box-shadow: inset 0 0 0 1px #2d83ff;
 }
 
-.mode-card[aria-checked="true"] .mode-title,
-.mode-card[aria-checked="true"] .mode-desc {
-  color: #fff;
+.mode-card::before {
+  content: "";
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid #a4a4a8;
+  border-radius: 50%;
+  transform: translateY(-50%);
+  background: #fff;
+}
+
+.mode-card[aria-checked="true"]::before {
+  border-color: #4c8df6;
+  background:
+    radial-gradient(circle, #fff 0 3px, transparent 4px),
+    #4c8df6;
 }
 
 .mode-title {
-  font-size: 13px;
-  font-weight: 500;
+  font-size: 14px;
+  line-height: 1.25;
+  font-weight: 760;
 }
 
 .mode-desc {
+  color: #737373;
   font-size: 12px;
+  line-height: 1.35;
   font-weight: 400;
-  opacity: 0.55;
-}
-
-.mode-card[aria-checked="true"] .mode-desc {
-  opacity: 0.7;
 }
 
 /* Folder section */
 
 .folder-section {
+  margin-top: 16px;
   border-top: 1px solid #e6e6e6;
   padding-top: 14px;
 }
@@ -123,7 +147,7 @@ body {
   display: block;
   margin-bottom: 6px;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 560;
 }
 
 .folder-controls {
@@ -136,7 +160,7 @@ body {
   min-width: 0;
   padding: 8px 12px;
   border: 1px solid #e6e6e6;
-  border-radius: 6px;
+  border-radius: 7px;
   color: #000;
   font: inherit;
   font-size: 13px;
@@ -147,7 +171,8 @@ body {
 }
 
 #folder-name:focus {
-  border-color: #000;
+  border-color: #2d83ff;
+  box-shadow: 0 0 0 3px rgba(45, 131, 255, 0.14);
 }
 
 #save-button {
@@ -155,11 +180,11 @@ body {
   padding: 8px 18px;
   border: none;
   border-radius: 50px;
-  background: #000;
+  background: #0f7bf5;
   color: #fff;
   font: inherit;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 650;
   cursor: pointer;
   transition: opacity 120ms ease;
 }
@@ -169,15 +194,15 @@ body {
 }
 
 #save-button:focus-visible {
-  outline: 2px solid #000;
+  outline: 2px solid #0f7bf5;
   outline-offset: 2px;
 }
 
 .folder-preview {
   margin: 6px 0 0;
+  color: #777;
   font-size: 12px;
   font-weight: 400;
-  opacity: 0.45;
 }
 
 .save-status {
@@ -201,33 +226,34 @@ body {
   margin: 0;
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 8px;
   font-size: 13px;
   font-weight: 400;
 }
 
 .shortcut-line > span:first-child {
-  margin-right: 5px;
+  margin-right: 6px;
 }
 
 kbd {
-  min-width: 28px;
-  padding: 3px 6px;
+  min-width: 36px;
+  padding: 5px 9px;
   border: none;
-  border-radius: 4px;
-  background: #f7f7f5;
+  border-radius: 6px;
+  background: #f2f2f2;
   color: #000;
   font-family: inherit;
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 720;
   text-align: center;
 }
 
 .secondary-text {
-  margin: 6px 0 0;
+  margin: 10px 0 0;
+  color: #8a8a8a;
   font-size: 12px;
+  line-height: 1.4;
   font-weight: 400;
-  opacity: 0.45;
 }
 
 /* History */
@@ -237,14 +263,29 @@ kbd {
 }
 
 .history-item {
+  position: relative;
   margin: 0;
-  padding: 10px 0;
+  padding: 10px 0 10px 26px;
   border-bottom: 1px solid #e6e6e6;
   font-size: 13px;
   font-weight: 400;
   line-height: 1.4;
   cursor: text;
   user-select: all;
+}
+
+.history-item::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 11px;
+  width: 14px;
+  height: 14px;
+  border: 1.5px solid #5d6368;
+  border-radius: 50%;
+  background:
+    linear-gradient(#5d6368, #5d6368) 50% 27% / 2px 7px no-repeat,
+    linear-gradient(#5d6368, #5d6368) 61% 59% / 6px 2px no-repeat;
 }
 
 .history-item:last-child {
@@ -255,21 +296,36 @@ kbd {
 .empty-history {
   margin: 0;
   padding: 4px 0;
+  color: #777;
   font-size: 13px;
   font-weight: 400;
-  opacity: 0.45;
 }
 
 .version {
-  margin-top: 24px;
-  font-size: 11px;
-  font-weight: 400;
-  text-align: center;
-  opacity: 0.35;
+  display: none;
 }
 
 @media (max-width: 520px) {
   body {
     padding: 16px;
+  }
+
+  .page-header h1 {
+    font-size: 20px;
+  }
+
+  .page-header p,
+  .mode-desc,
+  .secondary-text,
+  .history-item {
+    font-size: 13px;
+  }
+
+  .settings-card {
+    padding: 20px;
+  }
+
+  .mode-card {
+    padding-left: 48px;
   }
 }
