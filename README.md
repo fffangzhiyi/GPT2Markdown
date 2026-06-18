@@ -1,61 +1,79 @@
 # GPT2Markdown
 
-一键将 ChatGPT 对话导出为干净的 Markdown 文件。
+Export ChatGPT conversations to clean Markdown files — fast, private, and fully local.
 
-## 功能
+## Features
 
-- **快捷键导出**：在 ChatGPT 对话页按 `Ctrl+Shift+E`（Mac: `MacCtrl+Shift+E`），一键导出当前对话
-- **弹窗导出**：点击浏览器工具栏图标，在弹窗中点击"导出当前对话"
-- **Markdown 格式化**：自动转换为标准 Markdown，支持代码块、LaTeX 公式、图片、表格
-- **文件命名**：自动生成 `YYYY-MM-DD-对话标题.md` 格式的文件名
-- **保存方式可选**：支持每次弹出对话框选择位置，或自动保存到下载文件夹的子目录
-- **导出历史**：设置页面显示最近 10 条导出记录
-- **完全本地**：所有数据在浏览器内处理，不上传任何服务器
+### Export Modes
 
-## 安装
+- **Full Export** — One-click export of the current conversation via popup button or `Ctrl+Shift+E` (Mac: `MacCtrl+Shift+E`)
+- **Selective Export** — Checkboxes injected beside each message allow exporting only selected messages. Select all, deselect, or pick specific ones
+- **Batch Export** — Select and export multiple conversations at once from the ChatGPT history page. Conversations are grouped by project, with progress feedback and retry on failure
 
-### 开发者模式（当前阶段）
+### Performance
 
-1. 下载或克隆本仓库：
+- **Smart Prefetch** — Conversation data is preloaded in the background when you enter a page. By the time you click export, the data is already in memory — perceived latency drops to zero
+- **SPA-aware** — Automatically refreshes cached data when navigating between conversations within the ChatGPT single-page app
+
+### Output
+
+- **Markdown Formatting** — Standard Markdown with proper handling of code blocks, LaTeX math, images, and tables
+- **Reference Links** — Citation links are rendered with meaningful titles, not generic domain names
+- **File Naming** — Auto-generated `YYYY-MM-DD-title.md` filenames
+- **Save Options** — Choose between "always ask" (save dialog) or auto-save to a configurable subdirectory
+
+### Privacy
+
+- All processing happens locally in the browser
+- No data ever leaves your machine
+- No cookies, tokens, or credentials are read or stored
+- Only accesses `chatgpt.com`
+
+## Installation
+
+### Developer Mode
+
+1. Clone the repository:
    ```bash
    git clone https://github.com/fffangzhiyi/GPT2Markdown.git
    cd GPT2Markdown/src
    ```
-2. 打开 Chrome，地址栏输入 `chrome://extensions`
-3. 右上角开启「开发者模式」
-4. 点击「加载已解压的扩展程序」，选择 `src/` 目录
-5. 扩展图标出现在浏览器工具栏，安装完成
+2. Open Chrome and navigate to `chrome://extensions`
+3. Enable "Developer mode" (top right)
+4. Click "Load unpacked" and select the `src/` directory
+5. The extension icon appears in your toolbar
 
-### Chrome Web Store（后续版本）
+### Chrome Web Store
 
-> 尚未上架，敬请期待。
+> Not yet available.
 
-## 使用
+## Usage
 
-1. 打开 [chatgpt.com](https://chatgpt.com)，进入任意对话
-2. 按 `Ctrl+Shift+E`（Mac: `MacCtrl+Shift+E`），或点击工具栏图标 →「导出当前对话」
-3. 选择保存位置，Markdown 文件即下载到本地
+1. Open [chatgpt.com](https://chatgpt.com) and enter any conversation
+2. Click the extension icon in the toolbar, or press `Ctrl+Shift+E`
+3. Choose an export mode — full, selective, or batch
+4. The Markdown file downloads to your configured folder
 
-### 设置
+### Settings
 
-右键扩展图标 →「选项」，或点击弹窗中的「设置」链接：
-- **保存方式**：选择"每次询问"弹出对话框，或"自动保存"到指定文件夹
-- **文件夹名称**：自动保存时使用的下载子文件夹名（默认 `chatgpt-inbox`）
-- **快捷键**：可在 `chrome://extensions/shortcuts` 中自定义
+Right-click the extension icon → "Options", or click the settings link in the popup:
+- **Save mode** — "Ask every time" (system save dialog) or "Auto-save" to a folder
+- **Folder name** — Subdirectory for auto-saved files (default: `chatgpt-inbox`)
+- **Keyboard shortcut** — Customizable at `chrome://extensions/shortcuts`
 
-## 技术栈
+## Tech Stack
 
 - Chrome Extension Manifest V3
-- 纯 JavaScript，无框架依赖
-- ChatGPT Backend API（页面内调用，不走外部服务器）
+- Vanilla JavaScript, zero dependencies
+- ChatGPT Backend API (called in-page, no external servers)
 
-## 隐私
+## Privacy
 
-- 所有数据处理在浏览器本地完成
-- 不收集、不上传、不存储任何用户数据
-- 不读取 Cookie、Token 或任何凭据
-- 仅访问 chatgpt.com 域名
+- All data processing happens locally in the browser
+- No data is collected, uploaded, or stored externally
+- No cookies, tokens, or credentials are accessed
+- Only the `chatgpt.com` domain is accessed
 
-## 许可
+## License
 
 MIT
