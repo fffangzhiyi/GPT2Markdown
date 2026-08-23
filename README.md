@@ -2,8 +2,9 @@
 
 Export ChatGPT conversations to clean Markdown files — fast, private, and fully local.
 
-## What's New in v1.1.0
+## What's New in v1.1.1
 
+- Refined Popup spacing to add breathing room to the primary information hierarchy while keeping the overall size stable.
 - New blue-purple GPT2Markdown product icon across the extension.
 - Redesigned the conversation and history Popup views as a compact, single-surface interface.
 - Added a Batch Export entry on conversation pages while keeping the existing history-page entry.

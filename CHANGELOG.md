@@ -1,5 +1,20 @@
 # Changelog
 
+## v1.1.1 — 2026-08-23
+
+### Changed
+
+- Rebalanced Popup vertical rhythm with more spacing across the primary information rows.
+- Reduced the Settings row height while keeping the overall Popup size stable and free of horizontal overflow.
+
+### Compatibility
+
+- No functional or business behavior changes.
+
+### Tested
+
+- Verified with the full Node test suite.
+
 ## v1.1.0 — 2026-08-23
 
 ### Added
