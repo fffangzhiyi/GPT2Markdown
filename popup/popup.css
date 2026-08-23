@@ -26,7 +26,7 @@ body.batch-mode {
 }
 
 #main-view {
-  padding: 11px 10px 10px;
+  padding: 14px 10px 6px;
 }
 
 .brand-header,
@@ -48,7 +48,7 @@ body.batch-mode {
 }
 
 .brand-header {
-  min-height: 24px;
+  min-height: 26px;
 }
 
 .brand-lockup {
@@ -113,8 +113,8 @@ body.batch-mode {
 }
 
 .status-row {
-  min-height: 27px;
-  margin-top: 7px;
+  min-height: 29px;
+  margin-top: 10px;
   padding: 0 8px;
   border: 1px solid #e1e4ea;
   border-radius: 7px;
@@ -144,11 +144,11 @@ body.batch-mode {
 }
 
 .actions-section {
-  margin-top: 8px;
+  margin-top: 11px;
 }
 
 .context-description {
-  margin: 0 1px 5px;
+  margin: 0 1px 7px;
   color: #4f5561;
   font-size: 11px;
   line-height: 1.3;
@@ -158,8 +158,8 @@ body.batch-mode {
   display: flex;
   align-items: center;
   gap: 6px;
-  min-height: 27px;
-  height: 27px;
+  min-height: 30px;
+  height: 30px;
   padding: 4px 7px;
   border: 1px solid #e1e4ea;
   border-radius: 7px;
@@ -350,7 +350,7 @@ body.batch-mode {
 
 .footer {
   display: block;
-  margin-top: 10px;
+  margin-top: 12px;
   color: #858b96;
   font-size: 10px;
 }
@@ -363,13 +363,13 @@ body.batch-mode {
 }
 
 .footer-divider {
-  margin: 10px 0 9px;
+  margin: 8px 0 4px;
   border-top: 1px solid #edf0f4;
 }
 
 .footer-settings-row {
   display: flex;
-  min-height: 28px;
+  min-height: 20px;
   align-items: center;
   justify-content: flex-end;
 }
