@@ -2,14 +2,20 @@
 
 var fullExportBtn = document.getElementById('full-export-btn');
 var selectExportBtn = document.getElementById('select-export-btn');
+var conversationBatchExportBtn = document.getElementById('conversation-batch-export-btn');
 var batchExportBtn = document.getElementById('batch-export-btn');
 var conversationActions = document.getElementById('conversation-actions');
 var historyActions = document.getElementById('history-actions');
 var otherMessage = document.getElementById('other-message');
+var contextDescription = document.getElementById('context-description');
+var contextSummary = document.getElementById('context-summary');
 var statusElement = document.getElementById('status');
 var voiceWarningElement = document.getElementById('voice-warning');
 var lastExportElement = document.getElementById('last-export');
+var conversationFooterActions = document.getElementById('conversation-footer-actions');
+var historyFooterActions = document.getElementById('history-footer-actions');
 var settingsLink = document.getElementById('settings-link');
+var headerSettingsBtn = document.getElementById('header-settings-btn');
 var mainView = document.getElementById('main-view');
 var batchPanel = document.getElementById('batch-panel');
 var batchList = document.getElementById('batch-list');
@@ -25,16 +31,9 @@ function padNumber(value) {
   return String(value).padStart(2, '0');
 }
 
-function formatDateTime(timestamp) {
+function formatTime(timestamp) {
   var date = new Date(timestamp);
-  return [
-    date.getFullYear(),
-    padNumber(date.getMonth() + 1),
-    padNumber(date.getDate())
-  ].join('-') + ' ' + [
-    padNumber(date.getHours()),
-    padNumber(date.getMinutes())
-  ].join(':');
+  return padNumber(date.getHours()) + ':' + padNumber(date.getMinutes());
 }
 
 function setStatus(message, type) {
@@ -78,10 +77,37 @@ function setButtonLoading(button, isLoading, loadingText, normalText) {
   }
 }
 
+function openSettings(event) {
+  if (event && event.preventDefault) {
+    event.preventDefault();
+  }
+  chrome.runtime.openOptionsPage();
+}
+
 function showPageContext(context) {
   conversationActions.hidden = context !== 'conversation';
-  historyActions.hidden = context === 'other';
+  historyActions.hidden = context !== 'history';
   otherMessage.hidden = context !== 'other';
+  if (conversationFooterActions) {
+    conversationFooterActions.hidden = context !== 'conversation';
+  }
+  if (historyFooterActions) {
+    historyFooterActions.hidden = context !== 'history';
+  }
+
+  if (contextDescription) {
+    if (context === 'conversation') {
+      contextDescription.textContent = '检测到当前为 ChatGPT 对话页面。';
+    } else if (context === 'history') {
+      contextDescription.textContent = '从历史记录中选择多个对话。';
+    } else {
+      contextDescription.textContent = '';
+    }
+  }
+
+  if (contextSummary && context === 'conversation') {
+    contextSummary.textContent = '可导出当前完整对话或选择部分消息';
+  }
 }
 
 function refreshExportStatus() {
@@ -93,7 +119,7 @@ function refreshExportStatus() {
     }
 
     if (response && response.lastExportTime) {
-      lastExportElement.textContent = '上次导出: ' + formatDateTime(response.lastExportTime);
+      lastExportElement.textContent = '上次导出 ' + formatTime(response.lastExportTime);
     } else {
       lastExportElement.textContent = '暂无导出记录';
     }
@@ -122,14 +148,14 @@ function handleExportResponse(response) {
 }
 
 function exportCurrentConversation() {
-  setButtonLoading(fullExportBtn, true, '导出中...', '全量导出');
+  setButtonLoading(fullExportBtn, true, '导出中…', '导出 Markdown');
   setStatus('', '');
   setVoiceWarning(false);
 
   chrome.runtime.sendMessage({
     action: 'exportCurrentConversation'
   }, function (response) {
-    setButtonLoading(fullExportBtn, false, '', '全量导出');
+    setButtonLoading(fullExportBtn, false, '', '导出 Markdown');
     handleExportResponse(response);
   });
 }
@@ -184,6 +210,7 @@ function sendToActiveChatGPTTab(message, callback) {
 function updateBatchSelectionState() {
   var count = selectedBatchItems.size;
   batchSelectedCount.textContent = '已选择 ' + count + ' 条';
+  startBatchExportBtn.textContent = '导出 ' + count + ' 个对话';
   startBatchExportBtn.disabled = count === 0;
 }
 
@@ -226,7 +253,7 @@ function renderBatchConversations(items) {
 
     var heading = document.createElement('div');
     heading.className = 'batch-group-title';
-    heading.textContent = group.title;
+    heading.textContent = group.title + ' ' + group.items.length;
     section.appendChild(heading);
 
     var options = document.createElement('div');
@@ -248,8 +275,10 @@ function renderBatchConversations(items) {
               id: item.id,
               title: item.title
             });
+            label.classList.add('batch-item-selected');
           } else {
             selectedBatchItems.delete(item.id);
+            label.classList.remove('batch-item-selected');
           }
           updateBatchSelectionState();
         });
@@ -272,13 +301,13 @@ function renderBatchConversations(items) {
 }
 
 function loadBatchConversations() {
-  setButtonLoading(reloadListBtn, true, '读取中...', '重新读取');
+  setButtonLoading(reloadListBtn, true, '↻', '↻');
   setBatchStatus('', '');
 
   sendToActiveChatGPTTab({
     action: 'getBatchConversations'
   }, function (response, error) {
-    setButtonLoading(reloadListBtn, false, '', '重新读取');
+    setButtonLoading(reloadListBtn, false, '', '↻');
 
     if (error === 'NO_CHATGPT_TAB') {
       renderBatchConversations([]);
@@ -310,7 +339,7 @@ function startBatchExport() {
   }
 
   var items = Array.from(selectedBatchItems.values());
-  setButtonLoading(startBatchExportBtn, true, '启动中...', '导出已选');
+  setButtonLoading(startBatchExportBtn, true, '启动中…', '导出 ' + items.length + ' 个对话');
   setBatchStatus('', '');
 
   sendToActiveChatGPTTab({
@@ -319,7 +348,7 @@ function startBatchExport() {
   }, function (response, error) {
     if (error) {
       setBatchStatus('启动失败，请重试', 'error');
-      setButtonLoading(startBatchExportBtn, false, '', '导出已选');
+      updateBatchSelectionState();
       return;
     }
 
@@ -329,7 +358,7 @@ function startBatchExport() {
     }
 
     setBatchStatus('启动失败，请重试', 'error');
-    setButtonLoading(startBatchExportBtn, false, '', '导出已选');
+    updateBatchSelectionState();
   });
 }
 
@@ -349,6 +378,9 @@ function exitBatchMode() {
 
 fullExportBtn.addEventListener('click', exportCurrentConversation);
 selectExportBtn.addEventListener('click', enterSelectionMode);
+if (conversationBatchExportBtn) {
+  conversationBatchExportBtn.addEventListener('click', enterBatchMode);
+}
 batchExportBtn.addEventListener('click', enterBatchMode);
 if (startBatchExportBtn && reloadListBtn && backBtn) {
   startBatchExportBtn.addEventListener('click', startBatchExport);
@@ -356,9 +388,9 @@ if (startBatchExportBtn && reloadListBtn && backBtn) {
   backBtn.addEventListener('click', exitBatchMode);
 }
 
-settingsLink.addEventListener('click', function (event) {
-  event.preventDefault();
-  chrome.runtime.openOptionsPage();
-});
+settingsLink.addEventListener('click', openSettings);
+if (headerSettingsBtn) {
+  headerSettingsBtn.addEventListener('click', openSettings);
+}
 
 refreshExportStatus();

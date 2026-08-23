@@ -1,0 +1,229 @@
+.gpt2md-message-container {
+  position: relative;
+}
+
+.gpt2md-checkbox-wrapper {
+  position: absolute;
+  top: 14px;
+  left: -28px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gpt2md-checkbox {
+  width: 17px;
+  height: 17px;
+  margin: 0;
+  border-radius: 4px;
+  accent-color: #4d6fd0;
+  cursor: pointer;
+}
+
+#gpt2md-action-bar,
+#gpt2md-batch-action-bar {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  z-index: 99999;
+  max-width: calc(100vw - 24px);
+  border: 1px solid #d9dee8;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.97);
+  box-shadow: 0 8px 24px rgba(36, 46, 68, 0.14), 0 1px 2px rgba(36, 46, 68, 0.08);
+  color: #242a35;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  transform: translateX(-50%);
+}
+
+#gpt2md-action-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: max-content;
+  min-height: 50px;
+  padding: 9px 10px 9px 14px;
+}
+
+.gpt2md-selection-count {
+  flex: 0 0 auto;
+  color: #343b48;
+  font-size: 13px;
+  font-weight: 620;
+  white-space: nowrap;
+}
+
+.gpt2md-selection-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.gpt2md-action-btn {
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid #d7dce5;
+  border-radius: 7px;
+  background: #fff;
+  color: #4a5362;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 570;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 130ms ease, border-color 130ms ease, color 130ms ease, transform 130ms ease;
+}
+
+.gpt2md-action-btn:hover:not(:disabled) {
+  border-color: #b9c1d0;
+  background: #f8f9fb;
+  color: #26303d;
+}
+
+.gpt2md-action-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.gpt2md-action-btn:focus-visible {
+  outline: 2px solid rgba(74, 99, 218, 0.38);
+  outline-offset: 2px;
+}
+
+.gpt2md-action-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.gpt2md-primary-btn {
+  border-color: #7189dc;
+  background: #f4f6ff;
+  color: #3756b5;
+}
+
+.gpt2md-primary-btn:hover:not(:disabled) {
+  border-color: #5874d0;
+  background: #edf1ff;
+  color: #2947a7;
+}
+
+.gpt2md-cancel-btn {
+  width: 30px;
+  padding: 0;
+  border-color: transparent;
+  background: transparent;
+  color: #69717e;
+  font-size: 20px;
+  font-weight: 400;
+}
+
+.gpt2md-cancel-btn:hover:not(:disabled) {
+  border-color: #dfe3ea;
+  background: #f7f8fa;
+}
+
+#gpt2md-batch-action-bar {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: min(320px, calc(100vw - 24px));
+  padding: 12px 13px 11px;
+}
+
+.gpt2md-batch-progress-header,
+.gpt2md-batch-progress-meta,
+.gpt2md-batch-progress-actions {
+  display: flex;
+  align-items: center;
+}
+
+.gpt2md-batch-progress-header {
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.gpt2md-batch-progress-title {
+  color: #2d3440;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.gpt2md-batch-progress-meta {
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 8px;
+  color: #747c89;
+  font-size: 11px;
+}
+
+.gpt2md-batch-progress-summary {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gpt2md-batch-progress-track {
+  height: 4px;
+  margin-top: 8px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: #edf0f4;
+}
+
+.gpt2md-batch-progress-bar {
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: #7189dc;
+  transition: width 160ms ease;
+}
+
+.gpt2md-batch-progress-actions {
+  justify-content: flex-end;
+  gap: 7px;
+  margin-top: 10px;
+}
+
+.gpt2md-batch-progress-actions .gpt2md-action-btn {
+  min-height: 29px;
+}
+
+.gpt2md-batch-close-btn {
+  width: 28px;
+  min-height: 28px;
+  padding: 0;
+  border-color: transparent;
+  background: transparent;
+  color: #68717f;
+  font-size: 19px;
+  font-weight: 400;
+}
+
+.gpt2md-batch-close-btn:hover:not(:disabled) {
+  border-color: #dfe3ea;
+  background: #f7f8fa;
+}
+
+@media (max-width: 760px) {
+  #gpt2md-action-bar {
+    bottom: 12px;
+    width: max-content;
+    max-width: calc(100vw - 16px);
+    padding: 8px 8px 8px 11px;
+  }
+
+  #gpt2md-batch-action-bar {
+    bottom: 12px;
+    max-width: calc(100vw - 16px);
+  }
+
+  .gpt2md-action-btn {
+    min-height: 29px;
+    padding: 0 8px;
+    font-size: 11px;
+  }
+
+  .gpt2md-selection-count {
+    font-size: 12px;
+  }
+}

@@ -71,14 +71,18 @@ function createContext(responses = {}) {
     'export-btn': createElement('export-btn', 'button'),
     'full-export-btn': createElement('full-export-btn', 'button'),
     'select-export-btn': createElement('select-export-btn', 'button'),
+    'conversation-batch-export-btn': createElement('conversation-batch-export-btn', 'button'),
     'batch-export-btn': createElement('batch-export-btn', 'button'),
     'conversation-actions': createElement('conversation-actions'),
     'history-actions': createElement('history-actions'),
     'other-message': createElement('other-message'),
+    'conversation-footer-actions': createElement('conversation-footer-actions'),
+    'history-footer-actions': createElement('history-footer-actions'),
     'voice-warning': createElement('voice-warning'),
     status: createElement('status'),
     'last-export': createElement('last-export'),
     'settings-link': createElement('settings-link'),
+    'header-settings-btn': createElement('header-settings-btn', 'button'),
     'batch-panel': createElement('batch-panel'),
     'batch-list': createElement('batch-list'),
     'batch-empty': createElement('batch-empty'),
@@ -92,11 +96,12 @@ function createContext(responses = {}) {
   elements['batch-panel'].hidden = true;
   elements['batch-empty'].hidden = true;
   elements['export-btn'].textContent = '导出当前对话';
-  elements['full-export-btn'].textContent = '全量导出';
-  elements['select-export-btn'].textContent = '选择导出';
-  elements['batch-export-btn'].textContent = '批量导出';
+  elements['full-export-btn'].textContent = '导出 Markdown';
+  elements['select-export-btn'].textContent = '选择消息';
+  elements['conversation-batch-export-btn'].textContent = '批量导出';
+  elements['batch-export-btn'].textContent = '选择对话';
   elements['batch-selected-count'].textContent = '已选择 0 条';
-  elements['start-batch-export-btn'].textContent = '导出已选';
+  elements['start-batch-export-btn'].textContent = '导出 0 个对话';
   elements['start-batch-export-btn'].disabled = true;
   elements['reload-list-btn'].textContent = '重新读取';
   elements['back-btn'].textContent = '返回';
@@ -224,7 +229,7 @@ async function test(name, fn) {
     assertJsonEqual(context.sentMessages[0], {
       action: 'getExportStatus'
     });
-    assert.strictEqual(context.elements['last-export'].textContent, '上次导出: 2026-06-02 20:30');
+    assert.strictEqual(context.elements['last-export'].textContent, '上次导出 20:30');
     assertJsonEqual(context.sentMessages[1], {
       action: 'prefetchConversation'
     });
@@ -284,7 +289,7 @@ async function test(name, fn) {
       action: 'exportCurrentConversation'
     });
     assert.strictEqual(context.elements['full-export-btn'].disabled, false);
-    assert.strictEqual(context.elements['full-export-btn'].textContent, '全量导出');
+    assert.strictEqual(context.elements['full-export-btn'].textContent, '导出 Markdown');
     assert.strictEqual(context.elements.status.textContent, '✅ 已导出: 2026-06-02-Title.md');
     assert.strictEqual(context.elements.status.className, 'status success');
     assert.strictEqual(context.elements['voice-warning'].textContent, '');
@@ -338,7 +343,7 @@ async function test(name, fn) {
     context.elements['full-export-btn'].click();
 
     assert.strictEqual(context.elements['full-export-btn'].disabled, true);
-    assert.strictEqual(context.elements['full-export-btn'].textContent, '导出中...');
+    assert.strictEqual(context.elements['full-export-btn'].textContent, '导出中…');
     assert.strictEqual(context.elements['full-export-btn'].classList.contains('loading'), true);
 
     exportCallback({
@@ -403,6 +408,21 @@ async function test(name, fn) {
     assert.strictEqual(context.openedOptionsPages.length, 1);
   });
 
+  await test('opens options page from the compact header menu', () => {
+    const context = createContext({
+      getExportStatus: {
+        lastExportTime: null,
+        lastExportFilename: '',
+        pageContext: 'conversation'
+      }
+    });
+
+    loadPopup(context);
+    context.elements['header-settings-btn'].click();
+
+    assert.strictEqual(context.openedOptionsPages.length, 1);
+  });
+
   await test('shows conversation actions on a conversation page', () => {
     const context = createContext({
       getExportStatus: {
@@ -415,8 +435,37 @@ async function test(name, fn) {
     loadPopup(context);
 
     assert.strictEqual(context.elements['conversation-actions'].hidden, false);
-    assert.strictEqual(context.elements['history-actions'].hidden, false);
+    assert.strictEqual(context.elements['history-actions'].hidden, true);
     assert.strictEqual(context.elements['other-message'].hidden, true);
+  });
+
+  await test('conversation batch button opens the existing batch panel', () => {
+    const context = createContext({
+      getExportStatus: {
+        lastExportTime: null,
+        lastExportFilename: '',
+        pageContext: 'conversation'
+      },
+      getBatchConversations: {
+        status: 'success',
+        detail: {
+          items: []
+        }
+      }
+    });
+
+    loadPopup(context);
+    context.elements['conversation-batch-export-btn'].click();
+
+    assert.strictEqual(context.elements['main-view'].hidden, true);
+    assert.strictEqual(context.elements['batch-panel'].hidden, false);
+    assert.strictEqual(context.body.classList.contains('batch-mode'), true);
+    assertJsonEqual(context.tabMessages[0], {
+      tabId: 123,
+      message: {
+        action: 'getBatchConversations'
+      }
+    });
   });
 
   await test('shows batch actions on ChatGPT history', () => {
@@ -433,6 +482,38 @@ async function test(name, fn) {
     assert.strictEqual(context.elements['conversation-actions'].hidden, true);
     assert.strictEqual(context.elements['history-actions'].hidden, false);
     assert.strictEqual(context.elements['other-message'].hidden, true);
+  });
+
+  await test('history footer batch action is visible and opens the existing batch panel', () => {
+    const context = createContext({
+      getExportStatus: {
+        lastExportTime: null,
+        lastExportFilename: '',
+        pageContext: 'history'
+      },
+      getBatchConversations: {
+        status: 'success',
+        detail: {
+          items: []
+        }
+      }
+    });
+
+    loadPopup(context);
+
+    assert.strictEqual(context.elements['history-footer-actions'].hidden, false);
+    assert.strictEqual(context.elements['conversation-footer-actions'].hidden, true);
+    context.elements['batch-export-btn'].click();
+
+    assert.strictEqual(context.elements['main-view'].hidden, true);
+    assert.strictEqual(context.elements['batch-panel'].hidden, false);
+    assert.strictEqual(context.body.classList.contains('batch-mode'), true);
+    assertJsonEqual(context.tabMessages[0], {
+      tabId: 123,
+      message: {
+        action: 'getBatchConversations'
+      }
+    });
   });
 
   await test('shows usage hint outside ChatGPT', () => {
@@ -489,6 +570,35 @@ async function test(name, fn) {
     assert.ok(css.includes('height: 360px'));
     assert.strictEqual(fs.existsSync('popup/batch.html'), false);
     assert.strictEqual(fs.existsSync('popup/batch.js'), false);
+  });
+
+  await test('conversation view keeps the compact reference layout contract', () => {
+    const html = fs.readFileSync('popup/popup.html', 'utf8');
+    const css = fs.readFileSync('popup/popup.css', 'utf8');
+
+    assert.ok(html.includes('class="chat-icon"'));
+    assert.ok(html.includes('class="copy-icon"'));
+    assert.ok(html.includes('id="conversation-footer-actions"'));
+    assert.ok(html.includes('id="conversation-batch-export-btn"'));
+    assert.ok(css.includes('width: 380px'));
+    assert.ok(css.includes('height: 26px'));
+    assert.strictEqual(css.includes('@media (max-width: 360px)'), false);
+  });
+
+  await test('popup uses one white surface without a nested card shell', () => {
+    const css = fs.readFileSync('popup/popup.css', 'utf8');
+    const bodyBlock = css.match(/body\s*\{([\s\S]*?)\}/);
+    const containerBlock = css.match(/\.container\s*\{([\s\S]*?)\}/);
+
+    assert.ok(bodyBlock);
+    assert.ok(containerBlock);
+    assert.match(bodyBlock[1], /width:\s*380px/);
+    assert.match(bodyBlock[1], /padding:\s*0/);
+    assert.match(bodyBlock[1], /background:\s*#fff/);
+    assert.doesNotMatch(containerBlock[1], /border\s*:/);
+    assert.doesNotMatch(containerBlock[1], /border-radius\s*:/);
+    assert.doesNotMatch(containerBlock[1], /box-shadow\s*:/);
+    assert.doesNotMatch(containerBlock[1], /background\s*:/);
   });
 
   await test('batch button switches the current popup to a larger batch view', () => {
@@ -563,8 +673,8 @@ async function test(name, fn) {
 
     const groups = context.elements['batch-list'].children;
     assert.strictEqual(groups.length, 2);
-    assert.strictEqual(groups[0].children[0].textContent, 'VibeCoding');
-    assert.strictEqual(groups[1].children[0].textContent, '未分组对话');
+    assert.strictEqual(groups[0].children[0].textContent, 'VibeCoding 1');
+    assert.strictEqual(groups[1].children[0].textContent, '未分组对话 1');
 
     const inputs = descendants(context.elements['batch-list'])
       .filter((element) => element.tagName === 'INPUT');
@@ -572,6 +682,7 @@ async function test(name, fn) {
     assert.strictEqual(inputs[0].checked, false);
     assert.strictEqual(inputs[1].checked, false);
     assert.strictEqual(context.elements['start-batch-export-btn'].disabled, true);
+    assert.strictEqual(context.elements['start-batch-export-btn'].textContent, '导出 0 个对话');
   });
 
   await test('batch view exports only checked conversations', () => {
@@ -612,6 +723,8 @@ async function test(name, fn) {
       .filter((element) => element.tagName === 'INPUT');
     inputs[1].checked = true;
     inputs[1].listeners.change.call(inputs[1]);
+    assert.strictEqual(context.elements['batch-selected-count'].textContent, '已选择 1 条');
+    assert.strictEqual(context.elements['start-batch-export-btn'].textContent, '导出 1 个对话');
     context.elements['start-batch-export-btn'].click();
 
     assertJsonEqual(context.tabMessages[1], {
@@ -682,6 +795,36 @@ async function test(name, fn) {
     assert.strictEqual(context.tabMessages.length, 2);
   });
 
+  await test('keeps reload control compact while loading and restores it after async response', () => {
+    let reloadCallback;
+    const context = createContext({
+      getExportStatus: {
+        lastExportTime: null,
+        lastExportFilename: '',
+        pageContext: 'history'
+      },
+      getBatchConversations(callback) {
+        reloadCallback = callback;
+      }
+    });
+
+    loadPopup(context);
+    context.elements['batch-export-btn'].click();
+
+    assert.strictEqual(context.elements['reload-list-btn'].disabled, true);
+    assert.strictEqual(context.elements['reload-list-btn'].classList.contains('loading'), true);
+    assert.strictEqual(context.elements['reload-list-btn'].textContent, '↻');
+
+    reloadCallback({
+      status: 'success',
+      detail: { items: [] }
+    });
+
+    assert.strictEqual(context.elements['reload-list-btn'].disabled, false);
+    assert.strictEqual(context.elements['reload-list-btn'].classList.contains('loading'), false);
+    assert.strictEqual(context.elements['reload-list-btn'].textContent, '↻');
+  });
+
   await test('batch view shows an error when no active ChatGPT tab is available', () => {
     const context = createContext({
       tabs: [],
@@ -713,5 +856,11 @@ async function test(name, fn) {
     delete context.elements['back-btn'];
 
     assert.doesNotThrow(() => loadPopup(context));
+  });
+
+  await test('popup header keeps the compact settings menu label', () => {
+    const html = fs.readFileSync('popup/popup.html', 'utf8');
+    assert.ok(html.includes('id="header-settings-btn"'));
+    assert.ok(html.includes('aria-label="打开设置"'));
   });
 })();

@@ -2,48 +2,96 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GPT2Markdown</title>
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
   <div class="container">
-    <div id="main-view">
-      <h1 class="title">ChatGPT → Markdown</h1>
-      <div id="conversation-actions" class="actions-section" hidden>
-        <button id="full-export-btn" class="export-btn">全量导出</button>
-        <button id="select-export-btn" class="export-btn secondary-btn">选择导出</button>
+    <main id="main-view">
+      <header class="brand-header">
+        <div class="brand-lockup">
+          <img class="brand-icon" src="../assets/icons/icon48.png" alt="GPT2Markdown">
+          <span class="brand-name">GPT2Markdown</span>
+        </div>
+        <div class="brand-meta">
+          <span class="version-label">v1.1.0</span>
+          <button id="header-settings-btn" class="icon-btn" type="button" aria-label="打开设置">⋮</button>
+        </div>
+      </header>
+
+      <div class="status-row" aria-label="处理状态">
+        <span class="status-dot" aria-hidden="true"></span>
+        <span class="status-label">已就绪</span>
+        <span class="privacy-label">本地处理 · 安全隐私</span>
       </div>
-      <div id="history-actions" class="actions-section" hidden>
-        <button id="batch-export-btn" class="export-btn">批量导出</button>
-      </div>
-      <div id="other-message" class="actions-section" hidden>
+
+      <section id="conversation-actions" class="actions-section" hidden>
+        <p id="context-description" class="context-description">检测到当前为 ChatGPT 对话页面。</p>
+        <div class="context-strip">
+          <span class="chat-icon" aria-hidden="true"></span>
+          <span class="context-label">当前对话</span>
+          <span id="context-summary" class="context-summary">可导出当前完整对话或选择部分消息</span>
+          <span class="copy-icon" aria-hidden="true"></span>
+        </div>
+      </section>
+
+      <section id="history-actions" class="actions-section" hidden>
+        <p class="context-description">从历史记录中选择多个对话。</p>
+        <div class="context-strip history-strip">
+          <span class="info-mark" aria-hidden="true">i</span>
+          <span>
+            <span class="context-label">ChatGPT 历史记录</span>
+            <span class="context-summary">选择当前已加载的对话进行批量导出</span>
+          </span>
+        </div>
+      </section>
+
+      <section id="other-message" class="actions-section" hidden>
         <p class="other-hint">请在 ChatGPT 页面使用</p>
-      </div>
+      </section>
+
       <p id="voice-warning" class="voice-warning"></p>
-      <p id="status" class="status"></p>
-      <p class="footer">
-        <span id="last-export"></span>
-        <a id="settings-link" href="#"><span class="settings-icon">&#9881;</span> 设置</a>
-      </p>
-    </div>
+      <p id="status" class="status" aria-live="polite"></p>
+
+      <footer class="footer">
+        <div class="footer-action-row">
+          <span id="last-export"></span>
+          <span class="shortcut-hint" aria-label="快捷键">⌃⇧E</span>
+          <span id="conversation-footer-actions" class="footer-actions" hidden>
+            <button id="full-export-btn" class="small-btn primary-btn" type="button">导出 Markdown</button>
+            <button id="select-export-btn" class="small-btn" type="button">选择消息</button>
+            <button id="conversation-batch-export-btn" class="small-btn batch-action-btn" type="button">
+              <span class="batch-stack-icon" aria-hidden="true"></span>批量导出
+            </button>
+          </span>
+          <span id="history-footer-actions" class="footer-actions" hidden>
+            <button id="batch-export-btn" class="small-btn primary-btn" type="button">选择对话</button>
+          </span>
+        </div>
+        <div class="footer-divider" aria-hidden="true"></div>
+        <div class="footer-settings-row">
+          <a id="settings-link" href="#"><span class="settings-icon" aria-hidden="true">⚙</span>设置</a>
+        </div>
+      </footer>
+    </main>
 
     <section id="batch-panel" class="batch-panel" hidden>
-      <div class="batch-header">
-        <h1 class="title">批量导出</h1>
-        <button id="back-btn" class="text-btn">返回</button>
-      </div>
-      <p class="batch-warning">
-        对话列表可能不完整，请先在 ChatGPT 页面完全展开对话列表。
-      </p>
+      <header class="batch-header">
+        <button id="back-btn" class="icon-btn" type="button" aria-label="返回">←</button>
+        <h1 class="batch-title">批量导出</h1>
+        <button id="reload-list-btn" class="icon-btn" type="button" aria-label="重新读取">↻</button>
+      </header>
+      <p class="batch-warning"><span class="info-mark" aria-hidden="true">i</span>当前仅显示 ChatGPT 已加载的对话</p>
       <div class="batch-list-shell">
         <div id="batch-list" class="batch-list"></div>
         <p id="batch-empty" class="batch-empty" hidden></p>
       </div>
-      <div class="batch-toolbar">
+      <footer class="batch-footer">
         <span id="batch-selected-count">已选择 0 条</span>
-        <button id="reload-list-btn" class="text-btn">重新读取</button>
-      </div>
-      <button id="start-batch-export-btn" class="export-btn" disabled>导出已选</button>
-      <p id="batch-status" class="batch-status"></p>
+        <button id="start-batch-export-btn" class="small-btn primary-btn" type="button" disabled>导出 0 个对话</button>
+      </footer>
+      <p id="batch-status" class="batch-status" aria-live="polite"></p>
     </section>
   </div>
   <script src="popup.js"></script>

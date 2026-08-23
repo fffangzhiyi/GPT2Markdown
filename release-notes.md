@@ -1,23 +1,23 @@
-## v1.0.0 (2026-06-18)
+## v1.1.0 (2026-08-23)
 
-GPT2Markdown 首个稳定版。在 MVP 基础上新增选择性消息导出、历史页批量导出和智能预取系统。
+### Highlights
 
-### 新增功能
+- Introduced the new blue-purple GPT2Markdown product icon.
+- Added a Batch Export entry on conversation pages while retaining the existing history-page entry.
 
-- **选择性消息导出**：对话页每条消息左侧注入勾选框，支持任意组合选择。默认全选，取消勾选后按钮实时显示已选计数，未选择时导出按钮自动禁用。操作栏提供全选、取消全选、导出已选和退出，Esc 键快捷退出后完全清理注入 DOM。
-- **历史页批量导出**：ChatGPT 历史列表页通过 Popup 进入批量选择模式，对话列表按项目自动分组。勾选后逐条调用 Backend API，进度实时反馈，单条失败不中断其余对话，完成后汇总成功/失败数量并支持一键重试失败项。
-- **智能预取系统**：页面进场立即预热 API 数据，通过 DOM 消息数量判定缓存有效性，后台 5 秒间隔监听新消息。用户点击导出时数据已在内存，感知延迟降为零。支持 SPA 页面内对话切换自动更新缓存。
+### UI Redesign
 
-### 改进
+- Redesigned the conversation and history Popup views as compact, single-surface interfaces.
+- Kept the existing Batch List design and behavior inside the single top-level Popup surface.
+- Unified the visual language of the Selection Dock, Batch Progress Overlay, and Settings page.
+- Fixed narrow-width Settings layouts so the Save button stays on one line and aligns with the folder input.
 
-- **UI 视觉改版**：Popup 双视图布局（260px 紧凑态 / 380px 批量态），设置页卡片式布局，操作栏深色主题
-- **导出性能优化**：优化了插件的导出性能，降低了对话导出时体感延迟
-- **引用标题准确**：优先使用 `citation.title` 具体标题，通用域名时自动追加 URL 路径后缀
-- **选择模式响应速度**：`getComputedStyle` 与 DOM 写入分离为两阶段批处理，消除 layout thrashing
+### Behavior and Compatibility
 
-### Bug 修复
+- Remains a Manifest V3 extension built with Vanilla JavaScript and no dependencies.
+- Core export, parser, Markdown, download, and prefetch chains are unchanged.
+- Local processing and privacy behavior are unchanged.
 
-- 修复 auto 保存模式下文件名错误显示为"下载.md"（根因：`chrome.downloads.onDeterminingFilename` 无条件 `suggest()` 覆盖传入路径）
-- 修复批量导出中项目名统一显示为"项目对话"（根因：ChatGPT 侧栏项目名位于 `aria-controls` 关联的面板结构中）
-- 修复 MutationObserver 在选择模式回调中修改 DOM 导致无限递归页面崩溃
-- 修复导出 Markdown 中引用链接标题无法区分同一域名下不同页面
+### Verification
+
+- The full Node test suite passed with `node --test`.

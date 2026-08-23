@@ -1,5 +1,27 @@
 # Changelog
 
+## v1.1.0 — 2026-08-23
+
+### Added
+
+- New blue-purple GPT2Markdown product icon for the extension and branded surfaces.
+- New conversation-page Batch Export entry, alongside the existing history-page entry.
+
+### Changed
+
+- Redesigned the conversation and history Popup views as compact, single-surface white interfaces.
+- Unified the visual language across the Batch List, Selection Dock, Batch Progress Overlay, and Settings page.
+- Kept the project on Manifest V3 and Vanilla JavaScript with no new framework or dependency.
+- Preserved the existing export, parser, Markdown, download, and prefetch business chains, as well as local processing and privacy behavior.
+
+### Fixed
+
+- Aligned the Settings folder input and Save button at narrow widths so the button stays on one line and matches the input height.
+
+### Tested
+
+- Verified the complete Node test suite after the release updates.
+
 ## v0.1.0 — 2026-06-09
 
 MVP 首个版本，实现 ChatGPT 对话一键导出为 Markdown 的核心功能。

@@ -9,55 +9,67 @@
 <body>
   <main class="settings-page">
     <header class="page-header">
-      <h1>GPT2Markdown 设置</h1>
-      <p>配置导出位置并查看最近的导出记录</p>
+      <div class="brand-lockup">
+        <img class="brand-icon" src="../assets/icons/icon48.png" alt="GPT2Markdown">
+        <div>
+          <h1>GPT2Markdown</h1>
+          <p>设置</p>
+        </div>
+      </div>
+      <span class="version-label">v1.1.0</span>
     </header>
 
-    <section class="settings-card" aria-labelledby="download-heading">
-      <h2 id="download-heading">下载配置</h2>
+    <section class="settings-section" aria-labelledby="download-heading">
+      <h2 id="download-heading">保存方式</h2>
 
       <fieldset class="save-mode-group">
-        <legend class="save-mode-legend">保存方式</legend>
+        <legend class="save-mode-legend">导出文件如何保存</legend>
 
         <div class="mode-card" id="mode-card-ask" role="radio" aria-checked="true" tabindex="0">
-          <span class="mode-title">每次询问保存位置</span>
-          <span class="mode-desc">导出时弹出系统对话框，可保存到任意位置</span>
+          <span class="mode-radio" aria-hidden="true"></span>
+          <span class="mode-copy">
+            <span class="mode-title">每次询问保存位置</span>
+            <span class="mode-desc">导出时由系统选择保存位置</span>
+          </span>
         </div>
 
         <div class="mode-card" id="mode-card-auto" role="radio" aria-checked="false" tabindex="0">
-          <span class="mode-title">自动保存到下载文件夹</span>
-          <span class="mode-desc">直接保存，不弹出对话框</span>
+          <span class="mode-radio" aria-hidden="true"></span>
+          <span class="mode-copy">
+            <span class="mode-title">自动保存</span>
+            <span class="mode-desc">直接保存到下载文件夹</span>
+          </span>
         </div>
       </fieldset>
 
       <div id="folder-section" class="folder-section">
-        <label for="folder-name">子文件夹名称</label>
+        <label for="folder-name">文件夹</label>
         <div class="folder-controls">
           <input id="folder-name" type="text" autocomplete="off" aria-describedby="folder-preview save-status">
-          <button id="save-button" type="button">保存</button>
+          <button id="save-button" class="small-button" type="button">保存</button>
         </div>
         <p id="folder-preview" class="folder-preview">正在加载...</p>
         <p id="save-status" class="save-status" aria-live="polite"></p>
       </div>
     </section>
 
-    <section class="settings-card" aria-labelledby="shortcut-heading">
+    <section class="settings-section" aria-labelledby="shortcut-heading">
       <h2 id="shortcut-heading">快捷键</h2>
-      <p class="shortcut-line">
-        <span>快捷键</span>
-        <kbd>Ctrl</kbd><span>+</span><kbd>Shift</kbd><span>+</span><kbd>E</kbd>
-      </p>
+      <div class="setting-row shortcut-row">
+        <span>导出当前对话</span>
+        <span class="shortcut-keys"><kbd>Ctrl</kbd><span>+</span><kbd>Shift</kbd><span>+</span><kbd>E</kbd></span>
+      </div>
       <p class="secondary-text">可在 Chrome 扩展快捷键管理中修改</p>
     </section>
 
-    <section class="settings-card" aria-labelledby="history-heading">
-      <h2 id="history-heading">导出历史</h2>
+    <section class="settings-section" aria-labelledby="history-heading">
+      <h2 id="history-heading">最近导出</h2>
       <div id="history-list" class="history-list" aria-live="polite">
         <p class="empty-history">正在加载...</p>
       </div>
     </section>
 
-    <footer class="version">版本 0.1.0</footer>
+    <footer class="version">GPT2Markdown · v1.1.0</footer>
   </main>
   <script src="settings.js"></script>
 </body>
