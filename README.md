@@ -17,7 +17,7 @@ Export ChatGPT conversations to clean Markdown files — fast, private, and full
 ### Export Modes
 
 - **Full Export** — One-click export of the current conversation via popup button or `Ctrl+Shift+E` (Mac: `MacCtrl+Shift+E`)
-- **Selective Export** — Checkboxes injected beside each message allow exporting only selected messages. Select all, deselect, or pick specific ones
+- **Selective Export** — One checkbox per question-and-reply group. Select all, deselect, or pick specific groups; exports match stable message IDs, including when earlier turns are not rendered
 - **Batch Export** — Select and export multiple conversations at once from the ChatGPT history page. Conversations are grouped by project, with progress feedback and retry on failure
 
 ### Performance

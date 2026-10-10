@@ -13,12 +13,25 @@
 }
 
 .gpt2md-checkbox {
+  appearance: auto;
+  -webkit-appearance: checkbox;
   width: 17px;
   height: 17px;
   margin: 0;
   border-radius: 4px;
   accent-color: #4d6fd0;
   cursor: pointer;
+}
+
+.gpt2md-selection-error {
+  flex-basis: 100%;
+  max-width: 260px;
+  color: #b42318;
+  font-size: 12px;
+}
+
+#gpt2md-action-bar:has(.gpt2md-selection-error) {
+  flex-wrap: wrap;
 }
 
 #gpt2md-action-bar,
@@ -205,6 +218,14 @@
 }
 
 @media (max-width: 760px) {
+  .gpt2md-message-container {
+    padding-inline-start: 26px;
+  }
+
+  .gpt2md-checkbox-wrapper {
+    left: 0;
+  }
+
   #gpt2md-action-bar {
     bottom: 12px;
     width: max-content;
