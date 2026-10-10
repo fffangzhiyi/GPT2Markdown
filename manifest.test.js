@@ -5,7 +5,7 @@ const fs = require('node:fs');
 
 const manifest = JSON.parse(fs.readFileSync('manifest.json', 'utf8'));
 
-assert.strictEqual(manifest.version, '1.1.1');
+assert.strictEqual(manifest.version, '1.1.2');
 
 function readPngHeader(path) {
   assert.strictEqual(fs.existsSync(path), true);

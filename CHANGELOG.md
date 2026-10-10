@@ -1,5 +1,27 @@
 # Changelog
 
+## v1.1.2 — 2026-10-10
+
+### Fixed
+
+- Restored selection checkbox visibility and alignment after ChatGPT's interface update, with one checkbox per question-and-reply group.
+- Matched selected groups to stable message IDs rather than DOM positions, preventing incorrect exports when earlier messages are not rendered.
+- Preserved selection across message unloads and reloads; clearing selections also keeps subsequently loaded groups unchecked.
+- Prevented duplicate selective downloads and ignored stale export responses after navigation or leaving selection mode. Unmatched message identities now show a retryable error.
+- Resolved batch-export project titles from current sidebar project IDs and labels, with support for renamed projects and older sidebar layouts.
+
+### Compatibility
+
+- No new extension permissions or dependencies.
+- Full export, batch downloads, and save settings retain their existing behavior.
+
+### Tested
+
+- All 11 Node test files passed, covering 182 checks.
+- Verified selection alignment and the downloaded Markdown against the selected question and reply on a real ChatGPT page.
+- Replayed the real sidebar DOM to verify all 12 project conversations have the correct project names, while all 24 loaded conversation IDs, titles, and project assignments remain unchanged.
+
+
 ## v1.1.1 — 2026-08-23
 
 ### Changed

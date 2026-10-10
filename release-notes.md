@@ -1,15 +1,27 @@
-## v1.1.1 (2026-08-23)
+## GPT2Markdown v1.1.2 (2026-10-10)
 
-### Highlights
+本次更新修复新版 ChatGPT 页面带来的选择导出和项目名称识别问题。
 
-- Added more breathing room to the main Popup information hierarchy.
-- Slimmed the Settings row while keeping the overall Popup dimensions stable.
+### 选择导出修复
 
-### Behavior and Compatibility
+- 恢复消息前复选框的显示与对齐，每组提问和回复对应一个复选框。
+- 按消息 ID 匹配导出内容，确保勾选的消息组与实际导出的提问、回复准确对应。
+- 页面滚动导致消息卸载或重新加载时，保留选择状态；点击清空后，新加载的消息不会自动勾选。
+- 防止重复点击造成重复下载；切换对话或退出选择模式后，忽略旧请求的结果。
+- 无法确认消息对应关系时显示可重试的错误提示，避免导出其他消息。
 
-- Export, parser, Markdown, download, and prefetch behavior is unchanged.
-- No functional or business behavior changes were introduced.
+### 批量导出修复
 
-### Verification
+- 修复部分项目被显示为“项目对话”的问题，项目名称现在与 ChatGPT 侧栏一致。
+- 支持读取重命名后的项目标题，并保留旧版侧栏的兼容逻辑。
 
-- The full Node test suite passed with `node --test`.
+### 兼容性与验证
+
+- 无新增权限或依赖，完整导出、批量下载和保存设置保持原有行为。
+- 11 个测试文件、182 项检查全部通过。
+- 已在真实 ChatGPT 页面核对复选框对齐，并验证下载的 Markdown 与所选提问、回复一致。
+- 使用真实侧栏 DOM 验证 12 条项目对话的名称匹配；全部 24 条已加载对话的 ID、标题和项目归属保持不变。
+
+### 安装或更新
+
+解压 `GPT2Markdown-v1.1.2.zip`，在 Chrome 扩展管理页加载解压后的目录。更新已有的开发者模式安装后，重新加载扩展并刷新 ChatGPT 页面。
